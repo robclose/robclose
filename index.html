@@ -1,1 +1,20 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tanks</title>
+  <style>
+    canvas { background: #334; display: block; margin: 0 auto; }
+    body { background: #111; color: #eee; font-family: monospace; text-align: center; }
+    button {padding: 4px; margin: 2px 10px;font-size: 15px; font-family: monospace; }
+    div.controls {background-color: darkslateblue; margin: auto; width: 400px ;padding:10px; }
+  </style>
+</head>
+<body>
+  <canvas id="terrainCanvas" width="800" height="600"></canvas>
+  <div class="controls" id="controls">Power <button id="powerminus" type="button">-</button> 
+    <input id='powerRange' type="range" min=0 max=120 /><button id="powerplus" type="button">+</button><button id="fire" type="button">Fire!</button></div>
+  <div>
+  <script src="tanks.js" ></script>
+</body>
+</html>
