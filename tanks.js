@@ -72,6 +72,10 @@ class Tank {
 	this.displayAngle = 90;
 	this.power = 40;
 	this.alive = true;
+	this.ammo = {
+		laser: {stock: 3, burst: 12, timeout: 100, colour: "red", exRadius: 5, bRadius: 2, hasMass: false},
+		bomb: {stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true}
+		};
 	}
 
 	setAngle (event) {
@@ -84,7 +88,7 @@ class Tank {
 	}
 
 	fall (){
-		this.y = terrainMap[this.x].ySoil - 5; 
+		this.y = terrainMap[this.x].ySoil; 
 	}
 	
 	update() {
@@ -92,14 +96,21 @@ class Tank {
 			this.fall();
 			ctx.fillStyle = this.colour;
 			ctx.strokeStyle= this.colour;
-			ctx.fillRect(this.x - 5, this.y - 2, 10, 8);
+			ctx.fillRect(this.x - 5, this.y - 4, 10, 8);
 			ctx.strokeRect(this.x + 35 * Math.cos(this.angle) - 2, this.y - 35 * Math.sin(this.angle) - 2, 4, 4 )
 		}
 	}
 
-	fire() {
-		bombs.push(new Bomb(this, "white"));
+	fire(number = 1, interval = 1) {
 		currentState = GameState.FIRING;
+		bombs.push(new Bomb(this, "red", 6, 2, false));
+
+		if (number > 1) { setTimeout( () => {
+			this.fire(number - 1, interval);
+		}, interval);
+	}
+		
+		
 	}
 
 	killed () {
@@ -115,9 +126,13 @@ class Tank {
 }
 
 class Bomb {
-	constructor(player, colour) {
+	constructor(player, colour, exRadius, bRadius, hasMass) {
 		this.x = player.x;
-		this.y = player.y;
+		this.y = player.y - 5;
+		this.exRadius = exRadius;
+		this.bRadius = bRadius;
+		this.hasMass = hasMass;
+		this.colour = colour;
 		this.vx = player.power * Math.cos(player.angle) / 20;
 		this.vy = -1 * player.power * Math.sin(player.angle) / 20;
 	}
@@ -126,19 +141,20 @@ class Bomb {
 		
 		let iCol = Math.floor(this.x);
 		if (terrainMap[iCol].collisionAt(Math.floor(this.y))) {
-					explosions.push(new Explosion(this, 20));
+					explosions.push(new Explosion(this));
 				
 			}
 
 		this.x += this.vx;
 		this.y += this.vy;
-		this.vy += gravity;
+		if (this.hasMass) { this.vy += gravity; }
 		
-		bombs = bombs.filter((b) => b.x > 0 && b.x < canvas.width && b.y < canvas.height);
-		ctx.fillStyle = "gold"
-		ctx.fillRect(this.x,this.y,3,3);
+		bombs = bombs.filter((b) => b.x > 0 && b.x < canvas.width && 
+																b.y < canvas.height && (b.y > 0 || this.hasMass));
+		ctx.fillStyle = this.colour;
+		ctx.fillRect(this.x - this.bRadius, this.y - this.bRadius, 2 * this.bRadius, 2 * this.bRadius);
 
-		if (this.y <= 0) {
+		if (this.y <= -10) {
 			ctx.beginPath(); 
 			ctx.moveTo( this.x - 5, 25); 
 			ctx.lineTo(this.x, 2); 
@@ -181,10 +197,10 @@ class Particle {
 }
 
 class Explosion {
-	constructor(bomb, radius) {
+	constructor(bomb) {
 		this.x = Math.floor(bomb.x);
 		this.y = bomb.y;
-		this.radius = radius;
+		this.radius = bomb.exRadius;
 		this.explode();
 		bombs = bombs.filter((e) => e !== bomb);
 	}
@@ -374,7 +390,7 @@ function setupButtons () {
   });
 
 	document.getElementById('fire').addEventListener( "click", (e) => {
-		tanks[currentPlayerIndex].fire();
+		tanks[currentPlayerIndex].fire(12,100);
 		document.getElementById('controls').style.display="none";
 	});
 
