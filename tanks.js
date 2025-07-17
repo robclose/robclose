@@ -6,12 +6,14 @@ let terrainMap = [];
 let slopeMap = [];
 let bombs = [];
 let explosions = [];
+let players = [];
 let tanks = [];
 let particles = [];
+let timestamp;
 const gravity = 0.01;
 const colourSoil = "limegreen"
 const colourRock = "saddlebrown"
-const GameState = {
+const phase = {
   START_GAME: "start_game",
   START_TURN: "start_turn",
   AIMING: "aiming",
@@ -19,25 +21,24 @@ const GameState = {
   END_TURN: "end_turn",
   GAME_OVER: "game_over",
 };
-let currentState = GameState.START_GAME;
-let currentPlayerIndex = 0;
-let timestamp;
+let game = {
+	state : phase.START_GAME,
+	activePlayer : 0
+}
 
 let map = {
 	gen () {
 		let slope = 0;
 		let dSlope = 0;
-		let ddSlope = 0;
 		terrainMap[0] = new Column(520);
 
 		for (let i = 1 ; i < canvas.width ; i++) {
 
 			let ySoil;
-			ddSlope = (Math.random() - 0.5);
-			dSlope += ddSlope;
-			dSlope -= dSlope * 0.1;
+			dSlope += (Math.random() - 0.5);
+			dSlope *= 0.9;
 			slope += dSlope ;
-			slope -= slope * 0.2;
+			slope *= 0.8;
 			ySoil = Math.floor(terrainMap[i-1].ySoil + slope);
 			terrainMap[i] = new Column(ySoil);
 			if (ySoil < 400) { dSlope += 0.1; slope += 0.5; }
@@ -62,9 +63,34 @@ let map = {
 		}
 	}
 }
+class Player {
+	constructor(colour) {
+		this.colour = colour;
+		this.score = 0;
+	}
+
+	spawnTank () {
+		let x;
+		do {
+				x = Math.floor(Math.random() * (canvas.width - 40)) + 20;
+		} while (tanks.some( t => 
+				Math.abs(t.x - x) < canvas.width / (players.length + 2)
+		)) 
+		
+		tanks.push(new Tank(x, this.colour, this));
+	}
+
+	drawScore () {
+		ctx.fillStyle = this.colour;
+    ctx.font = "18px monospace"
+		ctx.fillText(this.score,canvas.width - 20, (players.indexOf(this)+1) * 20)
+	}
+
+
+}
 
 class Tank {
-	constructor(x, colour) {
+	constructor(x, colour, player) {
 	this.x = x;
 	this.fall();
 	this.colour = colour;
@@ -72,14 +98,16 @@ class Tank {
 	this.displayAngle = 90;
 	this.power = 40;
 	this.alive = true;
+	this.player = player;
 	this.ammo = {
-		laser: {stock: 3, burst: 12, timeout: 100, colour: "red", exRadius: 5, bRadius: 2, hasMass: false},
-		bomb: {stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true}
+		Laser: {stock: 3, burst: 12, timeout: 100, colour: "red", exRadius: 5, bRadius: 2, hasMass: false},
+		Bomb: {stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true},
+		BigBomb: {stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true},
 		};
 	}
 
 	setAngle (event) {
-		if (currentState != GameState.AIMING) return;
+		if (game.state != phase.AIMING) return;
 		const rect = canvas.getBoundingClientRect(); // Get canvas position
     const x = event.clientX - rect.left;         // X coordinate relative to canvas
     const y = event.clientY - rect.top;          // Y coordinate relative to canvas
@@ -98,11 +126,12 @@ class Tank {
 			ctx.strokeStyle= this.colour;
 			ctx.fillRect(this.x - 5, this.y - 4, 10, 8);
 			ctx.strokeRect(this.x + 35 * Math.cos(this.angle) - 2, this.y - 35 * Math.sin(this.angle) - 2, 4, 4 )
+
 		}
 	}
 
 	fire(number = 1, interval = 1) {
-		currentState = GameState.FIRING;
+		game.state = phase.FIRING;
 		bombs.push(new Bomb(this, "red", 6, 2, false));
 
 		if (number > 1) { setTimeout( () => {
@@ -113,28 +142,30 @@ class Tank {
 		
 	}
 
-	killed () {
+	killed (player) {
 		this.alive = false;
+		if (player !== this.player) { player.score++; }
 		let survivors = tanks.filter( (t) => t.alive )
 		if (survivors.length == 1) {
-			currentState = GameState.GAME_OVER;
-			currentPlayerIndex = tanks.indexOf(survivors[0]);
-			setTimeout( () => currentState = GameState.START_GAME, 5000);
+			game.state = phase.GAME_OVER;
+			game.ActivePlayer = tanks.indexOf(survivors[0]);
+			setTimeout( () => game.state = phase.START_GAME, 5000);
 		}
 		tanks = survivors;
 	}
 }
 
 class Bomb {
-	constructor(player, colour, exRadius, bRadius, hasMass) {
-		this.x = player.x;
-		this.y = player.y - 5;
+	constructor(tank, colour, exRadius, bRadius, hasMass) {
+		this.x = tank.x;
+		this.y = tank.y - 5;
+		this.player = tank.player;
 		this.exRadius = exRadius;
 		this.bRadius = bRadius;
 		this.hasMass = hasMass;
 		this.colour = colour;
-		this.vx = player.power * Math.cos(player.angle) / 20;
-		this.vy = -1 * player.power * Math.sin(player.angle) / 20;
+		this.vx = tank.power * Math.cos(tank.angle) / 20;
+		this.vy = -1 * tank.power * Math.sin(tank.angle) / 20;
 	}
 
 	update () {
@@ -167,13 +198,13 @@ class Bomb {
 }
 
 class Particle {
-	constructor(player, explosion) {
-		this.x = player.x;
-		this.y = player.y;
-		this.bias = player.x - explosion.x
+	constructor(tank, explosion) {
+		this.x = tank.x;
+		this.y = tank.y;
+		this.bias = tank.x - explosion.x
 		this.vx = Math.random() * 2 - 1;
 		this.vy = -Math.random() * 1;
-		this.colour = player.colour;
+		this.colour = tank.colour;
 		}
 
 	update () {
@@ -201,6 +232,7 @@ class Explosion {
 		this.x = Math.floor(bomb.x);
 		this.y = bomb.y;
 		this.radius = bomb.exRadius;
+		this.player = bomb.player;
 		this.explode();
 		bombs = bombs.filter((e) => e !== bomb);
 	}
@@ -211,7 +243,7 @@ class Explosion {
 					for (let i = 0; i < 20 ; i++) {
 						particles.push(new Particle(t, this));
 					}
-					t.killed();
+					t.killed(this.player);
 				}
 
 		});
@@ -290,71 +322,71 @@ class Column {
 }
 
 setupButtons();
+players.push(new Player("yellow"), new Player("dodgerblue"), new Player("#FF69B4"));
 gameLoop();
 
 function gameLoop(time) {
 
-if (currentState == GameState.START_GAME) {
+if (game.state == phase.START_GAME) {
     	map.gen();
     	tanks.length = 0;
+    	players.forEach ( p => p.spawnTank() );
     	particles.length = 0;
-			tanks.push(	new Tank(50, "yellow"),
-					new Tank(350, "dodgerblue"), 
-					new Tank(750, "#FF69B4"));  // Hot pink
-		currentPlayerIndex = Math.floor(Math.random() * tanks.length);
-		currentState = GameState.START_TURN;
+		game.ActivePlayer = Math.floor(Math.random() * tanks.length);
+		game.state = phase.START_TURN;
  }
 
 	map.update();
+	players.forEach ( p => p.drawScore());
 	bombs.forEach( b => b.update() );
 	particles.forEach( p => p.update() );
 	tanks.forEach( t => t.update() );
 	explosions.forEach( e => e.update() );
 
-  switch (currentState) {
+  switch (game.state) {
 
-    case GameState.START_TURN:
+    case phase.START_TURN:
     	document.getElementById('controls').style.display="";
-    	document.getElementById('powerRange').value = tanks[currentPlayerIndex].power;
-    	currentState = GameState.AIMING;
+    	document.getElementById('powerRange').value = tanks[game.ActivePlayer].power;
+    	game.state = phase.AIMING;
     	timestamp = time;
    	break;
 
-    case GameState.AIMING:
-    	ctx.fillStyle = tanks[currentPlayerIndex].colour;
+    case phase.AIMING:
+    	ctx.fillStyle = tanks[game.ActivePlayer].colour;
     	ctx.font = "18px monospace"
 			ctx.textAlign = "start"	
-	   	ctx.fillText(`Player ${currentPlayerIndex + 1}`, 10, 30); 
+	   	ctx.fillText(`Player ${game.ActivePlayer + 1}`, 10, 30); 
 	   	ctx.font = "12px monospace"
-	   	ctx.fillText(`Angle ${tanks[currentPlayerIndex].displayAngle}`, 10, 45); 
-	   	ctx.fillText(`Power ${tanks[currentPlayerIndex].power}`, 10, 60); 
+	   	ctx.fillText(`Angle ${tanks[game.ActivePlayer].displayAngle}`, 10, 45); 
+	   	ctx.fillText(`Power ${tanks[game.ActivePlayer].power}`, 10, 60); 
 
     	if (time - timestamp < 3000) {
     		ctx.font = "32px monospace"
 				ctx.textAlign = "center"	
-				ctx.fillText(`Ready Player ${currentPlayerIndex + 1}`, 
+				ctx.fillText(`Ready Player ${game.ActivePlayer + 1}`, 
 				canvas.width / 2, canvas.height / 2); 
 				}
 
   	break;
 
-  	case GameState.FIRING:
+  	case phase.FIRING:
 	  if (bombs.length == 0 && explosions.length == 0 &&
 	  		terrainMap.every( e => e.yDeforms.length == 0)) {
-	  			currentState = GameState.END_TURN;
+	  			game.state = phase.END_TURN;
 	  		}
 	break;
 
-  	case GameState.END_TURN:
-		currentPlayerIndex = (currentPlayerIndex + 1) % tanks.length;
-	  	currentState = GameState.START_TURN;
+  	case phase.END_TURN:
+			game.ActivePlayer = (game.ActivePlayer + 1) % tanks.length;
+	  	game.state = phase.START_TURN;
   	break;
 
-  	case GameState.GAME_OVER:
+  	case phase.GAME_OVER:
   		ctx.fillStyle = tanks[0].colour;
   		ctx.font = "32px monospace";
-		ctx.textAlign = "center";	
-		ctx.fillText(`Game over, Player ${currentPlayerIndex + 1} wins!`, 
+			ctx.textAlign = "center";	
+			ctx.fillText(`Game over, Player ${game.ActivePlayer + 1} wins!`, 
 			canvas.width / 2, canvas.height / 2);
   	break;
   }
@@ -371,7 +403,7 @@ function setupButtons () {
 
 	canvas.addEventListener ( "mousedown", () => {
 		if (eMouse) {
-			intervalId = setInterval( () => tanks[currentPlayerIndex].setAngle(eMouse), 40);
+			intervalId = setInterval( () => tanks[game.ActivePlayer].setAngle(eMouse), 40);
 		}
 	});
 
@@ -386,21 +418,21 @@ function setupButtons () {
   });
 
   document.getElementById('powerRange').addEventListener('input', (i) => {
-  	tanks[currentPlayerIndex].power = i.target.value;
+  	tanks[game.ActivePlayer].power = i.target.value;
   });
 
 	document.getElementById('fire').addEventListener( "click", (e) => {
-		tanks[currentPlayerIndex].fire(12,100);
+		tanks[game.ActivePlayer].fire(12,100);
 		document.getElementById('controls').style.display="none";
 	});
 
 	document.getElementById('powerminus').addEventListener( "click", (e) => {
 		document.getElementById('powerRange').stepDown();
-		tanks[currentPlayerIndex].power = document.getElementById('powerRange').value;
+		tanks[game.ActivePlayer].power = document.getElementById('powerRange').value;
 	});
 
 	document.getElementById('powerplus').addEventListener( "click", (e) => {
 		document.getElementById('powerRange').stepUp();
-		tanks[currentPlayerIndex].power = document.getElementById('powerRange').value;
+		tanks[game.ActivePlayer].power = document.getElementById('powerRange').value;
 	});
 }
