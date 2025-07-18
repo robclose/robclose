@@ -9,7 +9,7 @@ let explosions = [];
 let players = [];
 let tanks = [];
 let particles = [];
-let timestamp;
+let timestamp = 0;
 const gravity = 0.01;
 const colourSoil = "limegreen"
 const colourRock = "saddlebrown"
@@ -107,7 +107,7 @@ class Tank {
 	this.alive = true;
 	this.player = player;
 	this.ammo = {
-		Laser: {stock: 3, burst: 12, timeout: 100, colour: "red", exRadius: 5, bRadius: 2, hasMass: false},
+		Laser: {stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, hasMass: false},
 		Bomb: {stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true},
 		BigBomb: {stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true},
 		};
@@ -137,13 +137,15 @@ class Tank {
 		}
 	}
 
-	fire(number = 1, interval = 1) {
+	fire(projectile, number = 0) {
 		game.state = phase.FIRING;
-		bombs.push(new Bomb(this, "gold", 20, 3, true));
-
-		if (number > 1) { setTimeout( () => {
-			this.fire(number - 1, interval);
-		}, interval);
+		let proj = this.ammo[projectile];
+		proj.stock--;
+		bombs.push(new Bomb(this, proj));
+		number++;
+		if (number < proj.burst) { setTimeout( () => {
+			this.fire(projectile, number);
+		}, proj.timeout);
 	}
 		
 		
@@ -163,14 +165,14 @@ class Tank {
 }
 
 class Bomb {
-	constructor(tank, colour, exRadius, bRadius, hasMass) {
+	constructor(tank, ammo) {
 		this.x = tank.x;
 		this.y = tank.y - 5;
 		this.player = tank.player;
-		this.exRadius = exRadius;
-		this.bRadius = bRadius;
-		this.hasMass = hasMass;
-		this.colour = colour;
+		this.exRadius = ammo.exRadius;
+		this.bRadius = ammo.bRadius;
+		this.hasMass = ammo.hasMass;
+		this.colour = ammo.colour;
 		this.vx = tank.power * Math.cos(tank.angle) / 20;
 		this.vy = -1 * tank.power * Math.sin(tank.angle) / 20;
 	}
@@ -330,7 +332,7 @@ class Column {
 
 setupButtons();
 players.push(new Player(pColours.ORANGE), new Player(pColours.BLUE), new Player(pColours.PINK));
-gameLoop();
+gameLoop(0);
 
 function gameLoop(time) {
 
@@ -427,7 +429,7 @@ function setupButtons () {
   });
 
 	document.getElementById('fire').addEventListener( "click", (e) => {
-		tanks[game.ActivePlayer].fire(3,300);
+		tanks[game.ActivePlayer].fire("Laser");
 		document.getElementById('controls').style.display="none";
 	});
 
