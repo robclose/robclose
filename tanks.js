@@ -25,6 +25,13 @@ let game = {
 	state : phase.START_GAME,
 	activePlayer : 0
 }
+const pColours = {
+	RED: {name: "Red", colour: "red"},
+	PINK: {name: "Pink", colour: "#FF69B4"},
+	YELLOW: {name: "Yellow", colour: "yellow"},
+	ORANGE: {name: "Orange", colour: "#FF8A00"},
+	BLUE: {name: "Blue", colour: "cornflowerblue"}
+}
 
 let map = {
 	gen () {
@@ -64,8 +71,8 @@ let map = {
 	}
 }
 class Player {
-	constructor(colour) {
-		this.colour = colour;
+	constructor(pColour) {
+		this.pColour = pColour;
 		this.score = 0;
 	}
 
@@ -77,11 +84,11 @@ class Player {
 				Math.abs(t.x - x) < canvas.width / (players.length + 2)
 		)) 
 		
-		tanks.push(new Tank(x, this.colour, this));
+		tanks.push(new Tank(x, this.pColour.colour, this));
 	}
 
 	drawScore () {
-		ctx.fillStyle = this.colour;
+		ctx.fillStyle = this.pColour.colour;
     ctx.font = "18px monospace"
 		ctx.fillText(this.score,canvas.width - 20, (players.indexOf(this)+1) * 20)
 	}
@@ -93,7 +100,7 @@ class Tank {
 	constructor(x, colour, player) {
 	this.x = x;
 	this.fall();
-	this.colour = colour;
+	//this.colour = colour;
 	this.angle = Math.PI / 2;
 	this.displayAngle = 90;
 	this.power = 40;
@@ -122,8 +129,8 @@ class Tank {
 	update() {
 		if (this.alive) {
 			this.fall();
-			ctx.fillStyle = this.colour;
-			ctx.strokeStyle= this.colour;
+			ctx.fillStyle = this.player.pColour.colour;
+			ctx.strokeStyle= this.player.pColour.colour;
 			ctx.fillRect(this.x - 5, this.y - 4, 10, 8);
 			ctx.strokeRect(this.x + 35 * Math.cos(this.angle) - 2, this.y - 35 * Math.sin(this.angle) - 2, 4, 4 )
 
@@ -132,7 +139,7 @@ class Tank {
 
 	fire(number = 1, interval = 1) {
 		game.state = phase.FIRING;
-		bombs.push(new Bomb(this, "red", 6, 2, false));
+		bombs.push(new Bomb(this, "gold", 20, 3, true));
 
 		if (number > 1) { setTimeout( () => {
 			this.fire(number - 1, interval);
@@ -204,7 +211,7 @@ class Particle {
 		this.bias = tank.x - explosion.x
 		this.vx = Math.random() * 2 - 1;
 		this.vy = -Math.random() * 1;
-		this.colour = tank.colour;
+		this.colour = tank.player.pColour.colour;
 		}
 
 	update () {
@@ -322,7 +329,7 @@ class Column {
 }
 
 setupButtons();
-players.push(new Player("yellow"), new Player("dodgerblue"), new Player("#FF69B4"));
+players.push(new Player(pColours.ORANGE), new Player(pColours.BLUE), new Player(pColours.PINK));
 gameLoop();
 
 function gameLoop(time) {
@@ -353,18 +360,16 @@ if (game.state == phase.START_GAME) {
    	break;
 
     case phase.AIMING:
-    	ctx.fillStyle = tanks[game.ActivePlayer].colour;
-    	ctx.font = "18px monospace"
+    	ctx.fillStyle = tanks[game.ActivePlayer].player.pColour.colour;
 			ctx.textAlign = "start"	
-	   	ctx.fillText(`Player ${game.ActivePlayer + 1}`, 10, 30); 
 	   	ctx.font = "12px monospace"
-	   	ctx.fillText(`Angle ${tanks[game.ActivePlayer].displayAngle}`, 10, 45); 
-	   	ctx.fillText(`Power ${tanks[game.ActivePlayer].power}`, 10, 60); 
+	   	ctx.fillText(`Angle ${tanks[game.ActivePlayer].displayAngle}`, 10, 25); 
+	   	ctx.fillText(`Power ${tanks[game.ActivePlayer].power}`, 10, 40); 
 
     	if (time - timestamp < 3000) {
     		ctx.font = "32px monospace"
 				ctx.textAlign = "center"	
-				ctx.fillText(`Ready Player ${game.ActivePlayer + 1}`, 
+				ctx.fillText(`Ready ${tanks[game.ActivePlayer].player.pColour.name} Player`, 
 				canvas.width / 2, canvas.height / 2); 
 				}
 
@@ -383,10 +388,10 @@ if (game.state == phase.START_GAME) {
   	break;
 
   	case phase.GAME_OVER:
-  		ctx.fillStyle = tanks[0].colour;
+  		ctx.fillStyle = tanks[0].player.pColour.colour;
   		ctx.font = "32px monospace";
 			ctx.textAlign = "center";	
-			ctx.fillText(`Game over, Player ${game.ActivePlayer + 1} wins!`, 
+			ctx.fillText(`Game over, ${tanks[0].player.pColour.name} Player wins!`, 
 			canvas.width / 2, canvas.height / 2);
   	break;
   }
@@ -422,7 +427,7 @@ function setupButtons () {
   });
 
 	document.getElementById('fire').addEventListener( "click", (e) => {
-		tanks[game.ActivePlayer].fire(12,100);
+		tanks[game.ActivePlayer].fire(3,300);
 		document.getElementById('controls').style.display="none";
 	});
 
