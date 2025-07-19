@@ -25,7 +25,7 @@ const phase = {
 };
 let game = {
 	state : phase.START_GAME,
-	activePlayer : 0
+	activeTank : 0
 }
 const pColours = {
 	RED: {name: "Red", colour: "red"},
@@ -177,7 +177,7 @@ class Tank {
 		let survivors = tanks.filter( (t) => t.alive )
 		if (survivors.length == 1) {
 			game.state = phase.GAME_OVER;
-			game.ActivePlayer = tanks.indexOf(survivors[0]);
+			game.activeTank = tanks.indexOf(survivors[0]);
 			setTimeout( () => game.state = phase.START_GAME, 5000);
 		}
 		tanks = survivors;
@@ -368,7 +368,7 @@ if (game.state == phase.START_GAME) {
     	tanks.length = 0;
     	players.forEach ( p => p.spawnTank() );
     	particles.length = 0;
-		game.ActivePlayer = Math.floor(Math.random() * tanks.length);
+		game.activeTank = Math.floor(Math.random() * tanks.length);
 		game.state = phase.START_TURN;
  }
 
@@ -383,10 +383,10 @@ if (game.state == phase.START_GAME) {
 
     case phase.START_TURN:
     	document.getElementById('controls').style.display="";
-    	document.getElementById('powerRange').value = tanks[game.ActivePlayer].power;
+    	document.getElementById('powerRange').value = tanks[game.activeTank].power;
     	let weapon = document.getElementById('weapon');
     	weapon.options.length = 0;
-    	Object.entries(tanks[game.ActivePlayer].ammo).forEach (a => { 
+    	Object.entries(tanks[game.activeTank].ammo).forEach (a => { 
     		if (a[1].stock > 0) {
     			weapon.add(new Option(`${a[1].name} (${a[1].stock})`, a[0] ));
     		}
@@ -399,16 +399,16 @@ if (game.state == phase.START_GAME) {
    	break;
 
     case phase.AIMING:
-    	ctx.fillStyle = tanks[game.ActivePlayer].player.pColour.colour;
+    	ctx.fillStyle = tanks[game.activeTank].player.pColour.colour;
 			ctx.textAlign = "start"	
 	   	ctx.font = "12px monospace"
-	   	ctx.fillText(`Angle ${tanks[game.ActivePlayer].displayAngle}`, 10, 25); 
-	   	ctx.fillText(`Power ${tanks[game.ActivePlayer].power}`, 10, 40); 
+	   	ctx.fillText(`Angle ${tanks[game.activeTank].displayAngle}`, 10, 25); 
+	   	ctx.fillText(`Power ${tanks[game.activeTank].power}`, 10, 40); 
 
     	if (time - timestamp < 3000) {
     		ctx.font = "32px monospace"
 				ctx.textAlign = "center"	
-				ctx.fillText(`Ready ${tanks[game.ActivePlayer].player.pColour.name} Player`, 
+				ctx.fillText(`Ready ${tanks[game.activeTank].player.pColour.name} Player`, 
 				canvas.width / 2, canvas.height / 2); 
 				}
 
@@ -422,7 +422,7 @@ if (game.state == phase.START_GAME) {
 	break;
 
   	case phase.END_TURN:
-			game.ActivePlayer = (game.ActivePlayer + 1) % tanks.length;
+			game.activeTank = (game.activeTank + 1) % tanks.length;
 	  	game.state = phase.START_TURN;
   	break;
 
@@ -447,7 +447,7 @@ function setupButtons () {
 
 	canvas.addEventListener ( "mousedown", () => {
 		if (eMouse) {
-			intervalId = setInterval( () => tanks[game.ActivePlayer].setAngle(eMouse), 40);
+			intervalId = setInterval( () => tanks[game.activeTank].setAngle(eMouse), 40);
 		}
 	});
 
@@ -462,23 +462,23 @@ function setupButtons () {
   });
 
   document.getElementById('powerRange').addEventListener('input', (i) => {
-  	tanks[game.ActivePlayer].power = i.target.value;
+  	tanks[game.activeTank].power = i.target.value;
   });
 
 	document.getElementById('fire').addEventListener( "click", (e) => {
 		let weapon = document.getElementById("weapon");
-		tanks[game.ActivePlayer].fire(weapon.value);
-		tanks[game.ActivePlayer].ammo[weapon.value].stock--;
+		tanks[game.activeTank].fire(weapon.value);
+		tanks[game.activeTank].ammo[weapon.value].stock--;
 		document.getElementById('controls').style.display="none";
 	});
 
 	document.getElementById('powerminus').addEventListener( "click", (e) => {
 		document.getElementById('powerRange').stepDown();
-		tanks[game.ActivePlayer].power = document.getElementById('powerRange').value;
+		tanks[game.activeTank].power = document.getElementById('powerRange').value;
 	});
 
 	document.getElementById('powerplus').addEventListener( "click", (e) => {
 		document.getElementById('powerRange').stepUp();
-		tanks[game.ActivePlayer].power = document.getElementById('powerRange').value;
+		tanks[game.activeTank].power = document.getElementById('powerRange').value;
 	});
 }
