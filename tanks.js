@@ -158,13 +158,13 @@ class Tank {
 		}
 	}
 
-	fire(projectile, number = 0) {
+	fire(type, number = 0) {
 		game.state = phase.FIRING;
-		let proj = this.ammo[projectile];
+		let proj = this.ammo[type];
 		bombs.push(new Bomb(this, proj ));
 		number++; 
 		if (number < proj.burst) { setTimeout( () => {
-			this.fire(projectile, number);
+			this.fire(type, number);
 		}, proj.timeout);
 	}
 		
@@ -386,9 +386,9 @@ if (game.state == phase.START_GAME) {
     	document.getElementById('powerRange').value = tanks[game.activeTank].power;
     	let weapon = document.getElementById('weapon');
     	weapon.options.length = 0;
-    	Object.entries(tanks[game.activeTank].ammo).forEach (a => { 
-    		if (a[1].stock > 0) {
-    			weapon.add(new Option(`${a[1].name} (${a[1].stock})`, a[0] ));
+    	Object.entries(tanks[game.activeTank].ammo).forEach (([key, ammo]) => { 
+    		if (ammo.stock > 0) {
+    			weapon.add(new Option(`${ammo.name} (${ammo.stock})`, key ));
     		}
     		weapon.value = "bomb";
     		
