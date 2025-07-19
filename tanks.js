@@ -13,6 +13,8 @@ let timestamp = 0;
 const gravity = 0.01;
 const colourSoil = "limegreen"
 const colourRock = "saddlebrown"
+const colourTankTrack = "#333333"
+const colourTankWheel = "#888888"
 const phase = {
   START_GAME: "start_game",
   START_TURN: "start_turn",
@@ -106,10 +108,11 @@ class Tank {
 	this.power = 40;
 	this.alive = true;
 	this.player = player;
+	this.radius = 6;
 	this.ammo = {
-		Laser: {stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, hasMass: false},
-		Bomb: {stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true},
-		BigBomb: {stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true},
+		laser: {name: "Laser", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, hasMass: false},
+		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true},
+		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true},
 		};
 	}
 
@@ -131,8 +134,26 @@ class Tank {
 			this.fall();
 			ctx.fillStyle = this.player.pColour.colour;
 			ctx.strokeStyle= this.player.pColour.colour;
-			ctx.fillRect(this.x - 5, this.y - 4, 10, 8);
-			ctx.strokeRect(this.x + 35 * Math.cos(this.angle) - 2, this.y - 35 * Math.sin(this.angle) - 2, 4, 4 )
+			ctx.fillRect(this.x - 2, this.y - 5, 5, 1);
+			ctx.fillRect(this.x - 3, this.y - 4, 7, 2);
+			ctx.fillRect(this.x - 7, this.y - 2, 15, 2);
+			ctx.fillRect(this.x - 8, this.y, 17, 3);
+			ctx.fillStyle = colourTankTrack;
+			ctx.fillRect(this.x - 8, this.y + 2, 17, 3);
+			ctx.fillRect(this.x - 6, this.y + 5, 13, 1);
+			ctx.fillStyle = colourTankWheel;
+			ctx.fillRect(this.x - 7, this.y + 3, 1, 1);
+			ctx.fillRect(this.x - 5, this.y + 3, 2, 2);
+			ctx.fillRect(this.x - 2, this.y + 3, 2, 2);
+			ctx.fillRect(this.x + 1, this.y + 3, 2, 2);
+			ctx.fillRect(this.x + 4, this.y + 3, 2, 2);
+			ctx.fillRect(this.x + 7, this.y + 3, 1, 1);
+			ctx.beginPath(); 
+			ctx.moveTo( this.x, this.y - 4); 
+			ctx.lineTo(this.x + 10 * Math.cos(this.angle), this.y - 4 - 10 * Math.sin(this.angle)); 
+			ctx.closePath();
+			ctx.stroke(); 
+			ctx.strokeRect(this.x + 50 * Math.cos(this.angle) - 2, this.y - 4 - 50 * Math.sin(this.angle) - 2, 4, 4 )
 
 		}
 	}
@@ -140,9 +161,8 @@ class Tank {
 	fire(projectile, number = 0) {
 		game.state = phase.FIRING;
 		let proj = this.ammo[projectile];
-		proj.stock--;
-		bombs.push(new Bomb(this, proj));
-		number++;
+		bombs.push(new Bomb(this, proj ));
+		number++; 
 		if (number < proj.burst) { setTimeout( () => {
 			this.fire(projectile, number);
 		}, proj.timeout);
@@ -173,22 +193,29 @@ class Bomb {
 		this.bRadius = ammo.bRadius;
 		this.hasMass = ammo.hasMass;
 		this.colour = ammo.colour;
-		this.vx = tank.power * Math.cos(tank.angle) / 20;
-		this.vy = -1 * tank.power * Math.sin(tank.angle) / 20;
+		this.power = ammo.hasMass ? tank.power : 80;
+		this.vx = this.power * Math.cos(tank.angle) / 20;
+		this.vy = -1 * this.power * Math.sin(tank.angle) / 20;
 	}
 
 	update () {
 		
 		let iCol = Math.floor(this.x);
 		if (terrainMap[iCol].collisionAt(Math.floor(this.y))) {
-					explosions.push(new Explosion(this));
-				
+					explosions.push(new Explosion(this));	
 			}
 
 		this.x += this.vx;
 		this.y += this.vy;
 		if (this.hasMass) { this.vy += gravity; }
 		
+		let otherTanks = tanks.filter( t => t.player !== this.player); 
+		if (otherTanks.some( t => 
+					Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.bRadius + t.radius
+		)) {
+			explosions.push(new Explosion(this));
+		}
+
 		bombs = bombs.filter((b) => b.x > 0 && b.x < canvas.width && 
 																b.y < canvas.height && (b.y > 0 || this.hasMass));
 		ctx.fillStyle = this.colour;
@@ -248,7 +275,7 @@ class Explosion {
 
 	explode () {
 		tanks.forEach( (t) => {
-				if (Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.radius) {
+				if (Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.radius + t.radius) {
 					for (let i = 0; i < 20 ; i++) {
 						particles.push(new Particle(t, this));
 					}
@@ -357,6 +384,16 @@ if (game.state == phase.START_GAME) {
     case phase.START_TURN:
     	document.getElementById('controls').style.display="";
     	document.getElementById('powerRange').value = tanks[game.ActivePlayer].power;
+    	let weapon = document.getElementById('weapon');
+    	weapon.options.length = 0;
+    	Object.entries(tanks[game.ActivePlayer].ammo).forEach (a => { 
+    		if (a[1].stock > 0) {
+    			weapon.add(new Option(`${a[1].name} (${a[1].stock})`, a[0] ));
+    		}
+    		weapon.value = "bomb";
+    		
+    	});
+    	
     	game.state = phase.AIMING;
     	timestamp = time;
    	break;
@@ -429,7 +466,9 @@ function setupButtons () {
   });
 
 	document.getElementById('fire').addEventListener( "click", (e) => {
-		tanks[game.ActivePlayer].fire("Laser");
+		let weapon = document.getElementById("weapon");
+		tanks[game.ActivePlayer].fire(weapon.value);
+		tanks[game.ActivePlayer].ammo[weapon.value].stock--;
 		document.getElementById('controls').style.display="none";
 	});
 
