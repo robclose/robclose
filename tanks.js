@@ -16,6 +16,9 @@ const colourRock = "saddlebrown"
 const colourTankTrack = "#333333"
 const colourTankWheel = "#888888"
 const phase = {
+	SETUP_PLAYERS_INIT: "setup_players_init",
+	SETUP_PLAYERS_WAIT: "setup_players_wait",
+	SETUP_PLAYERS_FINAL: "setup_players_final",
   START_GAME: "start_game",
   START_TURN: "start_turn",
   AIMING: "aiming",
@@ -24,15 +27,16 @@ const phase = {
   GAME_OVER: "game_over",
 };
 let game = {
-	state : phase.START_GAME,
+	state : phase.SETUP_PLAYERS_INIT,
 	activeTank : 0
 }
 const pColours = {
 	RED: {name: "Red", colour: "red"},
 	PINK: {name: "Pink", colour: "#FF69B4"},
 	YELLOW: {name: "Yellow", colour: "yellow"},
-	ORANGE: {name: "Orange", colour: "#FF8A00"},
-	BLUE: {name: "Blue", colour: "cornflowerblue"}
+	ORANGE: {name: "Orange", colour: "#fc9403"},
+	BLUE: {name: "Blue", colour: "#03f0fc"},
+	GREEN: {name: "Green", colour: "#03fc7f"}
 }
 
 let map = {
@@ -72,6 +76,7 @@ let map = {
 		}
 	}
 }
+
 class Player {
 	constructor(pColour) {
 		this.pColour = pColour;
@@ -357,19 +362,61 @@ class Column {
 	}
 }
 
-setupButtons();
-players.push(new Player(pColours.ORANGE), new Player(pColours.BLUE), new Player(pColours.PINK));
+
 gameLoop(0);
 
 function gameLoop(time) {
 
-if (game.state == phase.START_GAME) {
+	switch(game.state) {
+
+	case phase.SETUP_PLAYERS_INIT:
+		document.getElementById('controls').style.display = "none";
+		canvas.style.display = "none";
+		Object.entries(pColours).forEach( ([key, col]) => {
+			let div = document.createElement("div");
+			let cb = document.createElement("input");
+			cb.type = "checkbox";
+			cb.value = key;
+			cb.name = col.name;
+			cb.id = col.name;
+			let lbl = document.createElement('label')
+			lbl.htmlFor = col.name;
+			lbl.style.color = col.colour;
+			lbl.appendChild(document.createTextNode(col.name));
+			let spDiv = document.getElementById("setupPlayers");
+			div.appendChild(cb);
+			div.appendChild(lbl);	
+			spDiv.appendChild(div);
+			});
+
+		setupButtons();
+		game.state = phase.SETUP_PLAYERS_WAIT;
+
+	break;
+
+	case phase.SETUP_PLAYERS_WAIT:
+
+	break;
+
+	case phase.SETUP_PLAYERS_FINAL:
+			document.getElementById("setupPlayers").querySelectorAll("input").forEach ( cb => {
+				if (cb.checked) { players.push(new Player(pColours[cb.value]))}
+			});
+			
+		canvas.style.display = "";
+		document.getElementById("setupPlayers").style.display = "none";
+		document.getElementById("spok").style.display = "none";
+		game.state = phase.START_GAME;
+	break; 
+
+ 	case phase.START_GAME:
     	map.gen();
     	tanks.length = 0;
     	players.forEach ( p => p.spawnTank() );
     	particles.length = 0;
 		game.activeTank = Math.floor(Math.random() * tanks.length);
 		game.state = phase.START_TURN;
+		break;
  }
 
 	map.update();
@@ -402,8 +449,9 @@ if (game.state == phase.START_GAME) {
     	ctx.fillStyle = tanks[game.activeTank].player.pColour.colour;
 			ctx.textAlign = "start"	
 	   	ctx.font = "12px monospace"
-	   	ctx.fillText(`Angle ${tanks[game.activeTank].displayAngle}`, 10, 25); 
-	   	ctx.fillText(`Power ${tanks[game.activeTank].power}`, 10, 40); 
+	   	ctx.fillText(tanks[game.activeTank].player.pColour.name, 10, 20); 
+	   	ctx.fillText(`Angle ${tanks[game.activeTank].displayAngle}`, 10, 45); 
+	   	ctx.fillText(`Power ${tanks[game.activeTank].power}`, 10, 60); 
 
     	if (time - timestamp < 3000) {
     		ctx.font = "32px monospace"
@@ -470,6 +518,10 @@ function setupButtons () {
 		tanks[game.activeTank].fire(weapon.value);
 		tanks[game.activeTank].ammo[weapon.value].stock--;
 		document.getElementById('controls').style.display="none";
+	});
+
+	document.getElementById('spok').addEventListener( "click", (e) => {
+		game.state = phase.SETUP_PLAYERS_FINAL;
 	});
 
 	document.getElementById('powerminus').addEventListener( "click", (e) => {

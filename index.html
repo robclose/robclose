@@ -8,13 +8,23 @@
     body { background: #111; color: #eee; font-family: monospace; text-align: center; }
     button {padding: 4px; margin: 2px 10px;font-size: 15px; font-family: monospace; }
     div.controls {background-color: darkslateblue; margin: auto; width: 800px ;padding:10px; }
+    div.setupPlayers {text-align: left; margin-left: 300px}
   </style>
 </head>
 <body>
   <canvas id="terrainCanvas" width="800" height="600"></canvas>
-  <div class="controls" id="controls">Weapon <select name="weapon" id="weapon"><option value="one">One</option></select> Power <button id="powerminus" type="button">-</button> 
-    <input id='powerRange' type="range" min=0 max=120 /><button id="powerplus" type="button">+</button><button id="fire" type="button">Fire!</button></div>
-  <div>
+
+  <div class="controls" id="controls">
+    Weapon <select name="weapon" id="weapon"></select> 
+    Power <button id="powerminus" type="button">-</button> 
+    <input id='powerRange' type="range" min=0 max=120 />
+    <button id="powerplus" type="button">+</button>
+    <button id="fire" type="button">Fire!</button></div>
+  
+  <div class="setupPlayers" id="setupPlayers">Select player colours: 
+    
+  </div>
+  <div class="setupPlayers" ><button id="spok" type="button">OK</button></div>
   <script src="tanks.js" ></script>
 </body>
 </html>
