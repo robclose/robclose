@@ -3,7 +3,6 @@
 const canvas = document.getElementById('terrainCanvas');
 const ctx = canvas.getContext('2d');
 let terrainMap = [];
-let slopeMap = [];
 let bombs = [];
 let explosions = [];
 let players = [];
@@ -36,7 +35,9 @@ const pColours = {
 	YELLOW: {name: "Yellow", colour: "yellow"},
 	ORANGE: {name: "Orange", colour: "#fc9403"},
 	BLUE: {name: "Blue", colour: "#03f0fc"},
-	GREEN: {name: "Green", colour: "#03fc7f"}
+	GREEN: {name: "Green", colour: "#03fc7f"},
+	WHITE: {name: "White", colour: "white"},
+	BROWN: {name: "Brown", colour: "#B87333"}
 }
 
 let map = {
@@ -115,9 +116,11 @@ class Tank {
 	this.player = player;
 	this.radius = 6;
 	this.ammo = {
-		laser: {name: "Laser", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, hasMass: false},
-		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true},
-		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true},
+		laser: {name: "Laser", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, hasMass: false, bounces: false, fuse: null},
+		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true, bounces: false, fuse: null},
+		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true, bounces: false, fuse: null},
+		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 15, bRadius: 3, hasMass: true, bounces: true, fuse: 10},
+		cluster: {name: "Cluster Bombs", stock: 3, burst: 3, timeout: 300, colour: "pink", exRadius: 10, bRadius: 3, hasMass: true, bounces: false, fuse: null},
 		};
 	}
 
@@ -158,20 +161,20 @@ class Tank {
 			ctx.lineTo(this.x + 10 * Math.cos(this.angle), this.y - 4 - 10 * Math.sin(this.angle)); 
 			ctx.closePath();
 			ctx.stroke(); 
-			ctx.strokeRect(this.x + 50 * Math.cos(this.angle) - 2, this.y - 4 - 50 * Math.sin(this.angle) - 2, 4, 4 )
-
+			if (tanks[game.activeTank] === this) {
+				ctx.strokeRect(this.x + 50 * Math.cos(this.angle) - 2, this.y - 4 - 50 * Math.sin(this.angle) - 2, 4, 4 )
+			}
 		}
 	}
 
 	fire(type, number = 0) {
 		game.state = phase.FIRING;
 		let proj = this.ammo[type];
-		bombs.push(new Bomb(this, proj ));
+		bombs.push(new Bomb(this, proj));
 		number++; 
-		if (number < proj.burst) { setTimeout( () => {
-			this.fire(type, number);
-		}, proj.timeout);
-	}
+		if (number < proj.burst) { 
+			setTimeout( () => { this.fire(type, number)}, proj.timeout);
+		}
 		
 		
 	}
@@ -198,21 +201,30 @@ class Bomb {
 		this.bRadius = ammo.bRadius;
 		this.hasMass = ammo.hasMass;
 		this.colour = ammo.colour;
+		this.bounces = ammo.bounces;
+		this.fuse = ammo.fuse;
+		this.timeFired = null;
 		this.power = ammo.hasMass ? tank.power : 80;
 		this.vx = this.power * Math.cos(tank.angle) / 20;
 		this.vy = -1 * this.power * Math.sin(tank.angle) / 20;
 	}
 
-	update () {
+	update (time) {
 		
+		if (!this.timeFired) this.timeFired = time;
+
+		if (this.fuse && this.timeFired + this.fuse * 1000 < time) { explosions.push(new Explosion(this)) }
+
 		let iCol = Math.floor(this.x);
 		if (terrainMap[iCol].collisionAt(Math.floor(this.y))) {
-					explosions.push(new Explosion(this));	
+					this.bounces ? this.bounce(iCol) : explosions.push(new Explosion(this))
 			}
 
 		this.x += this.vx;
 		this.y += this.vy;
-		if (this.hasMass) { this.vy += gravity; }
+		if (this.hasMass) { 
+			this.vy += gravity; 
+		}
 		
 		let otherTanks = tanks.filter( t => t.player !== this.player); 
 		if (otherTanks.some( t => 
@@ -225,16 +237,38 @@ class Bomb {
 																b.y < canvas.height && (b.y > 0 || this.hasMass));
 		ctx.fillStyle = this.colour;
 		ctx.fillRect(this.x - this.bRadius, this.y - this.bRadius, 2 * this.bRadius, 2 * this.bRadius);
+		if (this.fuse) {
+			ctx.font = "10px monospace"
+			ctx.fillText((this.fuse + (this.timeFired - time)/1000).toFixed(0) , this.x - 3, this.y - 10)
+		}
 
 		if (this.y <= -10) {
 			ctx.beginPath(); 
-			ctx.moveTo( this.x - 5, 25); 
+			ctx.moveTo(this.x - 5, 25); 
 			ctx.lineTo(this.x, 2); 
 			ctx.lineTo(this.x + 5, 25); 
 			ctx.closePath();
 			ctx.fill(); 
 		}
-}
+	}
+
+	bounce (iCol) {
+		const restitution = 0.5;
+		let dy = (terrainMap[iCol + 1].ySoil - terrainMap[iCol - 1].ySoil) * 0.5;
+		let normal = this.normalize({x: -dy, y: 1});
+		let dot = this.vx * normal.x + this.vy * normal.y;
+		this.vx = (this.vx - 2 * dot * normal.x) * restitution;
+		this.vy = (this.vy - 2 * dot * normal.y) * restitution;
+
+		this.y = terrainMap[iCol].ySoil
+		//this.x -= this.bRadius * 0.1 * normal.x 
+
+	}	
+
+	normalize(v) {
+  let mag = Math.sqrt(v.x * v.x + v.y * v.y);
+  return {x: v.x / mag, y: v.y / mag};
+	}
 
 }
 
@@ -421,7 +455,7 @@ function gameLoop(time) {
 
 	map.update();
 	players.forEach ( p => p.drawScore());
-	bombs.forEach( b => b.update() );
+	bombs.forEach( b => b.update(time) );
 	particles.forEach( p => p.update() );
 	tanks.forEach( t => t.update() );
 	explosions.forEach( e => e.update() );
