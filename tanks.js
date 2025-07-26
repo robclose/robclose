@@ -1,7 +1,10 @@
 "use strict";
 
 const canvas = document.getElementById('terrainCanvas');
+const canvasSky = document.getElementById('skyCanvas');
 const ctx = canvas.getContext('2d');
+const ctxSky = canvasSky.getContext('2d');
+const nightsky = document.getElementById('nightsky');
 let terrainMap = [];
 let bombs = [];
 let explosions = [];
@@ -63,7 +66,6 @@ let map = {
 
 	update () {
 	ctx.clearRect(0,0,canvas.width,canvas.height);
-
 	for (let i=0;i<terrainMap.length;i++) {
 			let c = terrainMap[i];
 			ctx.fillStyle = colourSoil;
@@ -119,7 +121,7 @@ class Tank {
 		laser: {name: "Laser", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, hasMass: false, bounces: false, fuse: false},
 		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true, bounces: false, fuse: false},
 		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true, bounces: false, fuse: false},
-		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 15, bRadius: 3, hasMass: true, bounces: 20, fuse: 10},
+		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 15, bRadius: 3, hasMass: true, bounces: 20, fuse: 15},
 		cluster: {name: "Cluster Bombs", stock: 3, burst: 5, timeout: 400, colour: "pink", exRadius: 10, bRadius: 3, hasMass: true, bounces: false, fuse: false},
 		bouncebomb: {name: "Bouncing Bomb", stock: 5, burst: 1, timeout: null, colour: "skyblue", exRadius: 15, bRadius: 3, hasMass: true, bounces: 2, fuse: false},
 		};
@@ -413,6 +415,7 @@ function gameLoop(time) {
 	case phase.SETUP_PLAYERS_INIT:
 		document.getElementById('controls').style.display = "none";
 		canvas.style.display = "none";
+		nightsky.style.display = "none";
 		Object.entries(pColours).forEach( ([key, col]) => {
 			let div = document.createElement("div");
 			let cb = document.createElement("input");
@@ -445,6 +448,9 @@ function gameLoop(time) {
 			});
 			
 		canvas.style.display = "";
+		canvasSky.style.display = "";
+
+		ctxSky.drawImage(nightsky, 0, 0, canvasSky.width, canvasSky.height);
 		document.getElementById("setupPlayers").style.display = "none";
 		document.getElementById("spok").style.display = "none";
 		game.state = phase.START_GAME;
@@ -470,6 +476,10 @@ function gameLoop(time) {
   switch (game.state) {
 
     case phase.START_TURN:
+    	if (tanks.length == 0) {
+    		game.state = phase.START_GAME;
+    		break;
+    	}
     	document.getElementById('controls').style.display="";
     	document.getElementById('powerRange').value = tanks[game.activeTank].power;
     	let weapon = document.getElementById('weapon');
@@ -505,7 +515,7 @@ function gameLoop(time) {
 			if (timeElapsed > 3000 && timeElapsed < 13000) {
 				ctx.font = "22px monospace"
 				ctx.textAlign = "center"	
-				ctx.fillText(`Move ${tanks[game.activeTank].player.pColour.name} with z x ${(13 - timeElapsed/1000).toFixed(1)}`, 
+				ctx.fillText(`Move ${tanks[game.activeTank].player.pColour.name} with Z & X ${(13 - timeElapsed/1000).toFixed(1)}`, 
 				canvas.width / 2, 30); 
 				tanks[game.activeTank].move();
 				}
