@@ -116,11 +116,12 @@ class Tank {
 	this.player = player;
 	this.radius = 6;
 	this.ammo = {
-		laser: {name: "Laser", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, hasMass: false, bounces: false, fuse: null},
-		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true, bounces: false, fuse: null},
-		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true, bounces: false, fuse: null},
-		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 15, bRadius: 3, hasMass: true, bounces: true, fuse: 10},
-		cluster: {name: "Cluster Bombs", stock: 3, burst: 3, timeout: 300, colour: "pink", exRadius: 10, bRadius: 3, hasMass: true, bounces: false, fuse: null},
+		laser: {name: "Laser", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, hasMass: false, bounces: false, fuse: false},
+		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true, bounces: false, fuse: false},
+		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true, bounces: false, fuse: false},
+		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 15, bRadius: 3, hasMass: true, bounces: 20, fuse: 10},
+		cluster: {name: "Cluster Bombs", stock: 3, burst: 5, timeout: 400, colour: "pink", exRadius: 10, bRadius: 3, hasMass: true, bounces: false, fuse: false},
+		bouncebomb: {name: "Bouncing Bomb", stock: 5, burst: 1, timeout: null, colour: "skyblue", exRadius: 15, bRadius: 3, hasMass: true, bounces: 2, fuse: false},
 		};
 	}
 
@@ -254,6 +255,7 @@ class Bomb {
 
 	bounce (iCol) {
 		const restitution = 0.5;
+		this.bounces--;
 		let dy = (terrainMap[iCol + 1].ySoil - terrainMap[iCol - 1].ySoil) * 0.5;
 		let normal = this.normalize({x: -dy, y: 1});
 		let dot = this.vx * normal.x + this.vy * normal.y;
