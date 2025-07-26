@@ -14,24 +14,19 @@
 <body>
   <div style="width: 800px; height: 600px; margin: 0 auto">
     <div class="setupPlayers" id="setupPlayers">Select player colours: 
-    
   </div>
   <div class="setupPlayers" ><button id="spok" type="button">OK</button></div>
-    
     <div style="position:relative;">
     <canvas id="skyCanvas" width="800" height="600" style="z-index: 0;"></canvas>
     <canvas id="terrainCanvas" width="800" height="600" style="z-index: 1;"></canvas>
     </div>
   </div>
-
   <div class="controls" id="controls">
     Weapon <select name="weapon" id="weapon"></select> 
     Power <button id="powerminus" type="button">-</button> 
     <input id='powerRange' type="range" min=0 max=120 />
     <button id="powerplus" type="button">+</button>
     <button id="fire" type="button">Fire!</button></div>
-  
-  
   <img id="nightsky" style='display:none' src='nightsky.jpg' />
   <script src="tanks.js" ></script>
 </body>

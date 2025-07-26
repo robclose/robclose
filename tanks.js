@@ -98,11 +98,12 @@ class Player {
 		tanks.push(new Tank(x, this.pColour.colour, this));
 	}
 
-	drawScore () {
+drawScore () {
 		ctx.fillStyle = this.pColour.colour;
-    ctx.font = "18px monospace"
-		ctx.fillText(this.score,canvas.width - 20, (players.indexOf(this)+1) * 20)
-	}
+    ctx.font = "18px monospace";
+    ctx.textAlign = "start";	
+		ctx.fillText(this.score, canvas.width - 30, (players.indexOf(this)+1) * 20 + 13);
+		}
 
 
 }
@@ -115,15 +116,16 @@ class Tank {
 	this.displayAngle = 90;
 	this.power = 40;
 	this.alive = true;
+	this.health = 100;
 	this.player = player;
 	this.radius = 6;
 	this.ammo = {
-		laser: {name: "Laser", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, hasMass: false, bounces: false, fuse: false},
-		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, hasMass: true, bounces: false, fuse: false},
-		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, hasMass: true, bounces: false, fuse: false},
-		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 15, bRadius: 3, hasMass: true, bounces: 20, fuse: 15},
-		cluster: {name: "Cluster Bombs", stock: 3, burst: 5, timeout: 400, colour: "pink", exRadius: 10, bRadius: 3, hasMass: true, bounces: false, fuse: false},
-		bouncebomb: {name: "Bouncing Bomb", stock: 5, burst: 1, timeout: null, colour: "skyblue", exRadius: 15, bRadius: 3, hasMass: true, bounces: 2, fuse: false},
+		particle: {name: "Particle Beam", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, damage: 5, hasMass: false, bounces: false, fuse: false},
+		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, damage: 30, hasMass: true, bounces: false, fuse: false},
+		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, damage: 55, hasMass: true, bounces: false, fuse: false},
+		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 25, bRadius: 4, damage: 45, hasMass: true, bounces: 20, fuse: 15, multiplies: false},
+		cluster: {name: "Cluster Bombs", stock: 3, burst: 5, timeout: 400, colour: "pink", exRadius: 10, bRadius: 3, damage: 15, hasMass: true, bounces: false, fuse: false},
+		bouncebomb: {name: "Ellie's Bouncing Bomb", stock: 5, burst: 1, timeout: null, colour: "orange", exRadius: 10, bRadius: 2, damage: 10, hasMass: true, bounces: 2, fuse: false, multiplies: true},
 		};
 	}
 
@@ -173,6 +175,15 @@ class Tank {
 				ctx.strokeRect(this.x + 50 * Math.cos(this.angle) - 2, this.y - 4 - 50 * Math.sin(this.angle) - 2, 4, 4 )
 			}
 		}
+		this.drawHealth();
+	}
+
+		drawHealth () {
+		ctx.fillStyle = this.player.pColour.colour;
+		ctx.strokeStyle = this.player.pColour.colour;
+    ctx.font = "18px monospace";
+		ctx.strokeRect(canvas.width - 150, (players.indexOf(this.player)+1) * 20 , 100, 15);
+		ctx.fillRect(canvas.width - 150, (players.indexOf(this.player)+1) * 20, this.health, 15);
 	}
 
 	fire(type, number = 0) {
@@ -189,6 +200,9 @@ class Tank {
 
 	killed (player) {
 		this.alive = false;
+		for (let i = 0; i < 20 ; i++) {
+						particles.push(new Particle(this));
+					}
 		if (player !== this.player) { player.score++; }
 		let survivors = tanks.filter( (t) => t.alive )
 		if (survivors.length == 1) {
@@ -210,6 +224,8 @@ class Bomb {
 		this.hasMass = ammo.hasMass;
 		this.colour = ammo.colour;
 		this.bounces = ammo.bounces;
+		this.multiplies = ammo.multiplies;
+		this.damage = ammo.damage;
 		this.fuse = ammo.fuse;
 		this.timeFired = null;
 		this.power = ammo.hasMass ? tank.power : 80;
@@ -263,6 +279,11 @@ class Bomb {
 	bounce (iCol) {
 		const restitution = 0.5;
 		this.bounces--;
+		if (this.multiplies) {
+			this.bRadius *= 2;
+			this.exRadius *= 2;
+			this.damage *= 2;
+		}
 		let dy = (terrainMap[iCol + 1].ySoil - terrainMap[iCol - 1].ySoil) * 0.5;
 		let normal = this.normalize({x: -dy, y: 1});
 		let dot = this.vx * normal.x + this.vy * normal.y;
@@ -282,10 +303,10 @@ class Bomb {
 }
 
 class Particle {
-	constructor(tank, explosion) {
+	constructor(tank) {
 		this.x = tank.x;
 		this.y = tank.y;
-		this.bias = tank.x - explosion.x
+		//this.bias = tank.x - explosion.x
 		this.vx = Math.random() * 2 - 1;
 		this.vy = -Math.random() * 1;
 		this.colour = tank.player.pColour.colour;
@@ -315,6 +336,7 @@ class Explosion {
 	constructor(bomb) {
 		this.x = Math.floor(bomb.x);
 		this.y = bomb.y;
+		this.damage = bomb.damage;
 		this.radius = bomb.exRadius;
 		this.player = bomb.player;
 		this.explode();
@@ -324,12 +346,10 @@ class Explosion {
 	explode () {
 		tanks.forEach( (t) => {
 				if (Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.radius + t.radius) {
-					for (let i = 0; i < 20 ; i++) {
-						particles.push(new Particle(t, this));
-					}
-					t.killed(this.player);
+					t.health -= this.damage;
+					if (t.health <= 0) t.killed(this.player);
 				}
-
+					
 		});
 
 		for (let i = -1 * this.radius ; i < this.radius + 1 ; i++) {
@@ -500,9 +520,8 @@ function gameLoop(time) {
     	ctx.fillStyle = tanks[game.activeTank].player.pColour.colour;
 			ctx.textAlign = "start"	
 	   	ctx.font = "12px monospace"
-	   	ctx.fillText(tanks[game.activeTank].player.pColour.name, 10, 20); 
-	   	ctx.fillText(`Angle ${tanks[game.activeTank].displayAngle}`, 10, 45); 
-	   	ctx.fillText(`Power ${tanks[game.activeTank].power}`, 10, 60); 
+	   	ctx.fillText(`Angle ${tanks[game.activeTank].displayAngle}`, 10, 25); 
+	   	ctx.fillText(`Power ${tanks[game.activeTank].power}`, 10, 40); 
 	   	let timeElapsed = time - timestamp;
 
     	if (timeElapsed < 3000) {
@@ -513,7 +532,7 @@ function gameLoop(time) {
 				}
 
 			if (timeElapsed > 3000 && timeElapsed < 13000) {
-				ctx.font = "22px monospace"
+				ctx.font = "18px monospace"
 				ctx.textAlign = "center"	
 				ctx.fillText(`Move ${tanks[game.activeTank].player.pColour.name} with Z & X ${(13 - timeElapsed/1000).toFixed(1)}`, 
 				canvas.width / 2, 30); 
