@@ -123,7 +123,7 @@ class Tank {
 		particle: {name: "Particle Beam", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, damage: 5, hasMass: false, bounces: false, fuse: false},
 		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, damage: 30, hasMass: true, bounces: false, fuse: false},
 		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, damage: 55, hasMass: true, bounces: false, fuse: false},
-		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 25, bRadius: 4, damage: 45, hasMass: true, bounces: 20, fuse: 15, multiplies: false},
+		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 25, bRadius: 4, damage: 45, hasMass: true, bounces: 20, fuse: 12, multiplies: false},
 		cluster: {name: "Cluster Bombs", stock: 3, burst: 5, timeout: 400, colour: "pink", exRadius: 10, bRadius: 3, damage: 15, hasMass: true, bounces: false, fuse: false},
 		bouncebomb: {name: "Ellie's Bouncing Bomb", stock: 5, burst: 1, timeout: null, colour: "orange", exRadius: 10, bRadius: 2, damage: 10, hasMass: true, bounces: 2, fuse: false, multiplies: true},
 		};
@@ -140,6 +140,7 @@ class Tank {
 
 	fall (){
 		this.y = terrainMap[Math.floor(this.x)].ySoil; 
+		if (this.y > canvas.height) this.killed(this.player);
 	}
 
 	move () {
@@ -250,11 +251,13 @@ class Bomb {
 			this.vy += gravity; 
 		}
 		
-		let otherTanks = tanks.filter( t => t.player !== this.player); 
-		if (otherTanks.some( t => 
-					Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.bRadius + t.radius
-		)) {
-			explosions.push(new Explosion(this));
+		if (!this.fuse) {
+			let otherTanks = tanks.filter( t => t.player !== this.player); 
+			if (otherTanks.some( t => 
+						Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.bRadius + t.radius
+			)) {
+				explosions.push(new Explosion(this));
+			}
 		}
 
 		bombs = bombs.filter((b) => b.x > 0 && b.x < canvas.width && 
