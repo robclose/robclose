@@ -108,7 +108,6 @@ class Tank {
 	constructor(x, colour, player) {
 	this.x = x;
 	this.fall();
-	//this.colour = colour;
 	this.angle = Math.PI / 2;
 	this.displayAngle = 90;
 	this.power = 40;
@@ -136,6 +135,10 @@ class Tank {
 
 	fall (){
 		this.y = terrainMap[this.x].ySoil; 
+	}
+
+	move () {
+		
 	}
 	
 	update() {
@@ -488,12 +491,21 @@ function gameLoop(time) {
 	   	ctx.fillText(tanks[game.activeTank].player.pColour.name, 10, 20); 
 	   	ctx.fillText(`Angle ${tanks[game.activeTank].displayAngle}`, 10, 45); 
 	   	ctx.fillText(`Power ${tanks[game.activeTank].power}`, 10, 60); 
+	   	let timeElapsed = time - timestamp;
 
-    	if (time - timestamp < 3000) {
+    	if (timeElapsed < 3000) {
     		ctx.font = "32px monospace"
 				ctx.textAlign = "center"	
 				ctx.fillText(`Ready ${tanks[game.activeTank].player.pColour.name} Player`, 
 				canvas.width / 2, canvas.height / 2); 
+				}
+
+			if (timeElapsed > 3000 && timeElapsed < 13000) {
+				ctx.font = "22px monospace"
+				ctx.textAlign = "center"	
+				ctx.fillText(`Move ${tanks[game.activeTank].player.pColour.name} Player: ${(13 - timeElapsed/1000).toFixed(1)}`, 
+				canvas.width / 2, 30); 
+				tanks[game.activeTank].move();
 				}
 
   	break;
