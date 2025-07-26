@@ -140,7 +140,7 @@ class Tank {
 
 	fall (){
 		this.y = terrainMap[Math.floor(this.x)].ySoil; 
-		if (this.y > canvas.height) this.killed(this.player);
+		if (this.y > canvas.height) this.killed();
 	}
 
 	move () {
@@ -199,16 +199,16 @@ class Tank {
 		
 	}
 
-	killed (player) {
+	killed () {
 		this.alive = false;
 		for (let i = 0; i < 20 ; i++) {
 						particles.push(new Particle(this));
 					}
-		if (player !== this.player) { player.score++; }
 		let survivors = tanks.filter( (t) => t.alive )
 		if (survivors.length == 1) {
 			game.state = phase.GAME_OVER;
 			game.activeTank = tanks.indexOf(survivors[0]);
+			survivors[0].player.score++;
 			setTimeout( () => game.state = phase.START_GAME, 5000);
 		}
 		tanks = survivors;
@@ -350,7 +350,7 @@ class Explosion {
 		tanks.forEach( (t) => {
 				if (Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.radius + t.radius) {
 					t.health -= this.damage;
-					if (t.health <= 0) t.killed(this.player);
+					if (t.health <= 0) t.killed();
 				}
 					
 		});
