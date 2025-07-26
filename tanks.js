@@ -7,6 +7,7 @@ let bombs = [];
 let explosions = [];
 let players = [];
 let tanks = [];
+let keys = [];
 let particles = [];
 let timestamp = 0;
 const gravity = 0.01;
@@ -134,11 +135,12 @@ class Tank {
 	}
 
 	fall (){
-		this.y = terrainMap[this.x].ySoil; 
+		this.y = terrainMap[Math.floor(this.x)].ySoil; 
 	}
 
 	move () {
-		
+		if (keys.includes('z')) this.x -= 0.1;
+		if (keys.includes('x')) this.x += 0.1;
 	}
 	
 	update() {
@@ -428,7 +430,7 @@ function gameLoop(time) {
 			spDiv.appendChild(div);
 			});
 
-		setupButtons();
+		setupHandlers();
 		game.state = phase.SETUP_PLAYERS_WAIT;
 
 	break;
@@ -503,7 +505,7 @@ function gameLoop(time) {
 			if (timeElapsed > 3000 && timeElapsed < 13000) {
 				ctx.font = "22px monospace"
 				ctx.textAlign = "center"	
-				ctx.fillText(`Move ${tanks[game.activeTank].player.pColour.name} Player: ${(13 - timeElapsed/1000).toFixed(1)}`, 
+				ctx.fillText(`Move ${tanks[game.activeTank].player.pColour.name} with z x ${(13 - timeElapsed/1000).toFixed(1)}`, 
 				canvas.width / 2, 30); 
 				tanks[game.activeTank].move();
 				}
@@ -534,7 +536,7 @@ function gameLoop(time) {
   requestAnimationFrame(gameLoop);
 }
 
-function setupButtons () {
+function setupHandlers () {
 
 	let intervalId = null;
 	let eMouse = null;
@@ -555,6 +557,16 @@ function setupButtons () {
   canvas.addEventListener('mouseleave', () => {
     clearInterval(intervalId);
     intervalId = null;
+  });
+
+  window.addEventListener('keydown', (e) => {
+  	if (!keys.includes(e.key)) keys.push(e.key);
+  	console.log (keys);
+  });
+
+  window.addEventListener('keyup', (e) => {
+  	keys = keys.filter( (k) => e.key !== k);
+  	console.log (keys);
   });
 
   document.getElementById('powerRange').addEventListener('input', (i) => {
