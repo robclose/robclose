@@ -10,12 +10,13 @@ let bombs = [];
 let explosions = [];
 let players = [];
 let tanks = [];
+let slimes = [];
 let keys = [];
 let particles = [];
 let timestamp = 0;
 const gravity = 0.01;
-const colourSoil = "limegreen"
-const colourRock = "#6f370f"
+const colourSoil = "sienna"
+const colourRock = "#4f2706"
 const colourTankTrack = "#333333"
 const colourTankWheel = "#888888"
 const phase = {
@@ -72,12 +73,21 @@ let map = {
 			ctx.fillRect(i, c.ySoil, 1, c.yRock - c.ySoil);
 			ctx.fillStyle = colourRock;
 			ctx.fillRect(i, c.yRock, 1, canvas.height - c.yRock);
+			if (c.slimed) {
+				ctx.fillStyle = "#66ff00";
+				ctx.fillRect(i, c.ySoil - 8, 1, 10);
+			}
 			
 			for (let yDeform of c.yDeforms) { 
 					ctx.clearRect(i, yDeform, 1, 1);
 					}
 			c.update();
 		}
+	},
+
+		gradientAt (x) {
+			x = Math.floor(x);
+			return (terrainMap[x + 5].ySoil - terrainMap[x - 5].ySoil) * 0.1;
 	}
 }
 
@@ -125,7 +135,8 @@ class Tank {
 		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, damage: 55, hasMass: true, bounces: false, fuse: false},
 		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 25, bRadius: 4, damage: 40, hasMass: true, bounces: 20, fuse: 12, multiplies: false},
 		cluster: {name: "Cluster Bombs", stock: 3, burst: 5, timeout: 400, colour: "pink", exRadius: 10, bRadius: 3, damage: 15, hasMass: true, bounces: false, fuse: false},
-		bouncebomb: {name: "Ellie's Bouncing Bomb", stock: 5, burst: 1, timeout: null, colour: "#FF69B4", exRadius: 10, bRadius: 2, damage: 10, hasMass: true, bounces: 2, fuse: false, multiplies: true},
+		bouncebomb: {name: "Bouncing Bomb", stock: 5, burst: 1, timeout: null, colour: "#FF69B4", exRadius: 10, bRadius: 2, damage: 10, hasMass: true, bounces: 2, fuse: false, multiplies: true},
+		slimebomb: {name: "Slime Bomb", stock: 10, burst: 1, timeout: null, colour: "#66ff00", exRadius: 0, bRadius: 6, damage: 10, hasMass: true, bounces: false, fuse: false, spawns: "slime"}
 		};
 	}
 
@@ -227,6 +238,7 @@ class Bomb {
 		this.bounces = ammo.bounces;
 		this.multiplies = ammo.multiplies;
 		this.damage = ammo.damage;
+		this.spawns = ammo.spawns;
 		this.fuse = ammo.fuse;
 		this.timeFired = null;
 		this.power = ammo.hasMass ? tank.power : 80;
@@ -242,7 +254,16 @@ class Bomb {
 
 		let iCol = Math.floor(this.x);
 		if (terrainMap[iCol].collisionAt(Math.floor(this.y))) {
-					this.bounces ? this.bounce(iCol) : explosions.push(new Explosion(this))
+					if (this.bounces) {
+						this.bounce(iCol)
+						} 
+						else if (this.spawns === "slime") {
+							slimes.push(new Slime(this))
+						}
+						else {
+
+						} explosions.push(new Explosion(this))
+					
 			}
 
 		this.x += this.vx;
@@ -287,7 +308,7 @@ class Bomb {
 			this.exRadius *= 2;
 			this.damage *= 2;
 		}
-		let dy = (terrainMap[iCol + 1].ySoil - terrainMap[iCol - 1].ySoil) * 0.5;
+		let dy = map.gradientAt(iCol);
 		let normal = this.normalize({x: -dy, y: 1});
 		let dot = this.vx * normal.x + this.vy * normal.y;
 		this.vx = (this.vx - 2 * dot * normal.x) * restitution;
@@ -386,6 +407,7 @@ class Column {
 		this.ySoil = yInit;
 		this.yRock = yInit + Math.floor(5*Math.random() + 10);
 		this.yDeforms = [];
+		this.slimed = false;
 	}
 
 	update () {
@@ -426,6 +448,43 @@ class Column {
 	collisionAt (y) {
 		return (y > this.ySoil && !this.yDeforms.includes(y)); 
 	}
+}
+
+class Slime {
+	constructor(bomb) {
+		this.segments = [];
+		let initialX = Math.floor(bomb.x);
+		debugger;
+		this.segments.push({x: initialX, y: terrainMap[initialX].ySoil })
+		this.vx = 0;
+		this.timestamp = 0;
+	}
+
+	update (time) {
+		this.vx = map.gradientAt(this.segments[0].x) * 0.3;
+		if (time - this.timestamp > 100) {
+			this.timestamp = time;
+			let newX = this.segments[0].x + this.vx
+			let newY = terrainMap[Math.floor(newX)].ySoil;
+			this.segments.unshift({x: newX, y: newY});
+			let startX = Math.floor(Math.min(this.segments[0].x, this.segments[1].x));
+			let endX = Math.floor(Math.max(this.segments[0].x, this.segments[1].x));
+				for (let i = startX ; i <= endX ; i++) {
+					terrainMap[i].slimed = true;
+				}
+	}
+	
+		if (this.segments.length > 15) this.segments.pop();
+
+		this.segments.forEach( (s, i) => {
+			let r = (15 - i) * 0.5;
+			ctx.fillStyle = '#66ff00';
+			ctx.beginPath();
+			ctx.arc(s.x, s.y - r, r, 0, 2 * Math.PI);
+			ctx.fill();
+		});
+	}
+
 }
 
 
@@ -495,6 +554,7 @@ function gameLoop(time) {
 	particles.forEach( p => p.update() );
 	tanks.forEach( t => t.update() );
 	explosions.forEach( e => e.update() );
+	slimes.forEach( s => s.update(time));
 
   switch (game.state) {
 
@@ -593,12 +653,10 @@ function setupHandlers () {
 
   window.addEventListener('keydown', (e) => {
   	if (!keys.includes(e.key)) keys.push(e.key);
-  	console.log (keys);
   });
 
   window.addEventListener('keyup', (e) => {
   	keys = keys.filter( (k) => e.key !== k);
-  	console.log (keys);
   });
 
   document.getElementById('powerRange').addEventListener('input', (i) => {
