@@ -262,7 +262,8 @@ class Bomb {
 						}
 						else {
 
-						} explosions.push(new Explosion(this))
+						 explosions.push(new Explosion(this))
+						}
 					
 			}
 
