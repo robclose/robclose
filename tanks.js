@@ -20,9 +20,6 @@ const colourRock = "#4f2706"
 const colourTankTrack = "#333333"
 const colourTankWheel = "#888888"
 const phase = {
-	SETUP_PLAYERS_INIT: "setup_players_init",
-	SETUP_PLAYERS_WAIT: "setup_players_wait",
-	SETUP_PLAYERS_FINAL: "setup_players_final",
   START_GAME: "start_game",
   START_TURN: "start_turn",
   AIMING: "aiming",
@@ -31,7 +28,7 @@ const phase = {
   GAME_OVER: "game_over",
 };
 let game = {
-	state : phase.SETUP_PLAYERS_INIT,
+	state : phase.START_GAME,
 	activeTank : 0
 }
 const pColours = {
@@ -127,8 +124,6 @@ drawScore () {
     ctx.textAlign = "start";	
 		ctx.fillText(this.score, canvas.width - 30, (players.indexOf(this)+1) * 20 + 13);
 		}
-
-
 }
 
 class Tank {
@@ -291,7 +286,7 @@ class Bomb {
 			this.vy += gravity; 
 		}
 		
-		if (!this.fuse) {
+		if (!this.fuse && !this.spawns) {
 			let otherTanks = tanks.filter( t => t.player !== this.player); 
 			if (otherTanks.some( t => 
 						Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.bRadius + t.radius
@@ -340,7 +335,6 @@ class Bomb {
   let mag = Math.sqrt(v.x * v.x + v.y * v.y);
   return {x: v.x / mag, y: v.y / mag};
 	}
-
 }
 
 class Particle {
@@ -369,7 +363,6 @@ class Particle {
 		ctx.fillStyle = this.colour;
 		ctx.fillRect(this.x,this.y,2,2);
 	}
-	
 }
 
 class Explosion {
@@ -460,7 +453,6 @@ class Column {
 			this.ySoil++;
 		}
 	}
-
 }
 
 class Slime {
@@ -470,17 +462,21 @@ class Slime {
 		this.vx = bomb.vx;
 		this.timestamp = 0;
 		this.size = 15;
+		this.stoppedCycles = 8;
 		bombs = bombs.filter((e) => e !== bomb);
 	}
 
 	update (time) {
-		this.vx += map.gradientAt(this.segments[0].x) * 0.02
-		this.vx *= 0.97;
-		
+		this.vx += map.gradientAt(this.segments[0].x) * 0.02;
+		this.vx *= 0.99;
+		this.vx = Math.min(this.vx, 1.0);
+		this.vx = Math.max(this.vx, -1.0);
+
 
 		if (time - this.timestamp > 100) {
 			this.timestamp = time;
-			let newX = this.segments[0].x + this.vx
+			if (Math.abs(this.vx) < 0.05) { this.stoppedCycles-- }
+			let newX = this.segments[0].x + this.vx;
 			
 			if (newX < 0) {
 				newX = 0 ;
@@ -510,73 +506,62 @@ class Slime {
 			ctx.arc(s.x, s.y - r, r, 0, 2 * Math.PI);
 			ctx.fill();
 		});
-		if (Math.abs(this.vx) < 0.005) { this.size -= 1 }
-		slimes = slimes.filter( (s) => s.segments.length > 0 && s.size > 4)	
+		if (this.stoppedCycles <=0) {this.size--}
+		slimes = slimes.filter( (s) => s.size > 4)	
 }
  }
 
 
-map = new Map();
-gameLoop(0);
+document.getElementById('controls').style.display = "none";
+canvas.style.display = "none";
+nightsky.style.display = "none";
+Object.entries(pColours).forEach( ([key, col]) => {
+	let div = document.createElement("div");
+	let cb = document.createElement("input");
+	cb.type = "checkbox";
+	cb.value = key;
+	cb.name = col.name;
+	cb.id = col.name;
+	let lbl = document.createElement('label')
+	lbl.htmlFor = col.name;
+	lbl.style.color = col.colour;
+	lbl.appendChild(document.createTextNode(col.name));
+	let spDiv = document.getElementById("setupPlayers");
+	div.appendChild(cb);
+	div.appendChild(lbl);	
+	spDiv.appendChild(div);
+	});
 
+setupHandlers();
+
+function startGame() {
+
+	let playerSelection = document.getElementById("setupPlayers").querySelectorAll("input:checked");
+	if (playerSelection.length < 2) { return false; }
+	playerSelection.forEach ( cb => {
+		players.push(new Player(pColours[cb.value]))
+	});
+		
+	canvas.style.display = "";
+	canvasSky.style.display = "";
+
+	ctxSky.drawImage(nightsky, 0, 0, canvasSky.width, canvasSky.height);
+	document.getElementById("setupPlayers").style.display = "none";
+	document.getElementById("spok").style.display = "none";
+	gameLoop(0);
+}
 
 function gameLoop(time) {
-
-	switch(game.state) {
-
-	case phase.SETUP_PLAYERS_INIT:
-		document.getElementById('controls').style.display = "none";
-		canvas.style.display = "none";
-		nightsky.style.display = "none";
-		Object.entries(pColours).forEach( ([key, col]) => {
-			let div = document.createElement("div");
-			let cb = document.createElement("input");
-			cb.type = "checkbox";
-			cb.value = key;
-			cb.name = col.name;
-			cb.id = col.name;
-			let lbl = document.createElement('label')
-			lbl.htmlFor = col.name;
-			lbl.style.color = col.colour;
-			lbl.appendChild(document.createTextNode(col.name));
-			let spDiv = document.getElementById("setupPlayers");
-			div.appendChild(cb);
-			div.appendChild(lbl);	
-			spDiv.appendChild(div);
-			});
-
-		setupHandlers();
-		game.state = phase.SETUP_PLAYERS_WAIT;
-
-	break;
-
-	case phase.SETUP_PLAYERS_WAIT:
-
-	break;
-
-	case phase.SETUP_PLAYERS_FINAL:
-			document.getElementById("setupPlayers").querySelectorAll("input").forEach ( cb => {
-				if (cb.checked) { players.push(new Player(pColours[cb.value]))}
-			});
-			
-		canvas.style.display = "";
-		canvasSky.style.display = "";
-
-		ctxSky.drawImage(nightsky, 0, 0, canvasSky.width, canvasSky.height);
-		document.getElementById("setupPlayers").style.display = "none";
-		document.getElementById("spok").style.display = "none";
-		game.state = phase.START_GAME;
-	break; 
-
- 	case phase.START_GAME:
+ 
+ if (game.state === phase.START_GAME) {
     	map = new Map();
     	tanks.length = 0;
     	players.forEach ( p => p.spawnTank() );
     	particles.length = 0;
 		game.activeTank = Math.floor(Math.random() * tanks.length);
 		game.state = phase.START_TURN;
-		break;
- }
+	}
+ 
 
 	map.update();
 	players.forEach ( p => p.drawScore());
@@ -587,8 +572,7 @@ function gameLoop(time) {
 	slimes.forEach( s => s.update(time));
 	if (tanks.length == 0) { game.state = phase.START_GAME; }
 
-  switch (game.state) {
-
+switch (game.state) {
     case phase.START_TURN:
     	if (tanks.length == 0) {
     		game.state = phase.START_GAME;
@@ -701,9 +685,7 @@ function setupHandlers () {
 		document.getElementById('controls').style.display="none";
 	});
 
-	document.getElementById('spok').addEventListener( "click", (e) => {
-		game.state = phase.SETUP_PLAYERS_FINAL;
-	});
+	document.getElementById('spok').addEventListener( "click", startGame);
 
 	document.getElementById('powerminus').addEventListener( "click", (e) => {
 		document.getElementById('powerRange').stepDown();
