@@ -5,13 +5,13 @@ const canvasSky = document.getElementById('skyCanvas');
 const ctx = canvas.getContext('2d');
 const ctxSky = canvasSky.getContext('2d');
 const nightsky = document.getElementById('nightsky');
-let terrainMap = [];
 let bombs = [];
 let explosions = [];
 let players = [];
 let tanks = [];
 let slimes = [];
 let keys = [];
+let map;
 let particles = [];
 let timestamp = 0;
 const gravity = 0.01;
@@ -45,11 +45,12 @@ const pColours = {
 	BROWN: {name: "Brown", colour: "#B87333"}
 }
 
-let map = {
-	gen () {
+class Map  {
+	constructor () {
+		this.terrain = [];
 		let slope = 0;
 		let dSlope = 0;
-		terrainMap[0] = new Column(520);
+		this.terrain[0] = new Column(520);
 
 		for (let i = 1 ; i < canvas.width ; i++) {
 
@@ -58,17 +59,17 @@ let map = {
 			dSlope *= 0.9;
 			slope += dSlope ;
 			slope *= 0.8;
-			ySoil = Math.floor(terrainMap[i-1].ySoil + slope);
-			terrainMap[i] = new Column(ySoil);
+			ySoil = (this.columnAt(i-1).ySoil + slope);
+			this.terrain[i] = new Column(ySoil);
 			if (ySoil < 400) { dSlope += 0.1; slope += 0.5; }
 			if (ySoil > 550) { dSlope -= 0.1; slope -= 0.5; }
 			}
-		},	
+		}	
 
 	update () {
 	ctx.clearRect(0,0,canvas.width,canvas.height);
-	for (let i=0;i<terrainMap.length;i++) {
-			let c = terrainMap[i];
+	for (let i=0;i<this.terrain.length;i++) {
+			let c = this.terrain[i];
 			ctx.fillStyle = colourSoil;
 			ctx.fillRect(i, c.ySoil, 1, c.yRock - c.ySoil);
 			ctx.fillStyle = colourRock;
@@ -83,13 +84,24 @@ let map = {
 					}
 			c.update();
 		}
-	},
+	}
 
 		gradientAt (x) {
 			x = Math.floor(x);
-			if (x <= 5) x = 5;
-			if (x >= canvas.width - 6) x = canvas.width - 6 
-			return (terrainMap[x + 5].ySoil - terrainMap[x - 5].ySoil) * 0.1;
+			if (x < 5) x = 5;
+			if (x > canvas.width - 6) x = canvas.width - 6 
+			return (this.terrain[x + 5].ySoil - this.terrain[x - 5].ySoil) * 0.1;
+	}
+
+	columnAt (x) {
+		return this.terrain[Math.floor(x)];
+	}
+
+	collisionAt (x, y) {
+		x = Math.floor(x);
+		y = Math.floor(y);
+		let col = this.columnAt(x);
+		return (y > col.ySoil && !col.yDeforms.includes(y)); 
 	}
 }
 
@@ -154,12 +166,12 @@ class Tank {
 	fall (){
 		this.x = Math.min (canvas.width - 2, this.x);
 		this.x = Math.max (2, this.x);
-		this.y = terrainMap[Math.floor(this.x)].ySoil; 
+		this.y = map.columnAt(this.x).ySoil; 
 		if (this.y > canvas.height) this.killed();
 	}
 
 	move () {
-		if (!terrainMap[Math.floor(this.x)].slimed) {
+		if (!map.columnAt(this.x).slimed) {
 			if (keys.includes('z')) this.x -= 0.1;
 			if (keys.includes('x')) this.x += 0.1;
 		}
@@ -167,8 +179,8 @@ class Tank {
 	
 	update() {
 		if (this.alive) {
-			if (terrainMap[Math.floor(this.x)].slimed) {
-			this.x += map.gradientAt(Math.floor(this.x)) * 0.05;
+			if (map.columnAt(this.x).slimed) {
+			this.x += map.gradientAt(this.x) * 0.05;
 			}
 			this.fall();
 			ctx.fillStyle = this.player.pColour.colour;
@@ -261,16 +273,15 @@ class Bomb {
 
 		if (this.fuse && this.timeFired + this.fuse * 1000 < time) { explosions.push(new Explosion(this)) }
 
-		let iCol = Math.floor(this.x);
-		if (terrainMap[iCol].collisionAt(Math.floor(this.y))) {
+		if (map.collisionAt(this.x, this.y)) {
 					if (this.bounces) {
-						this.bounce(iCol)
+						this.bounce(this.x);
 						} 
 						else if (this.spawns === "slime") {
-							slimes.push(new Slime(this))
+							slimes.push(new Slime(this));
 						}
 						else {
-						 explosions.push(new Explosion(this))
+						 explosions.push(new Explosion(this));
 						}
 					
 			}
@@ -309,7 +320,7 @@ class Bomb {
 		}
 	}
 
-	bounce (iCol) {
+	bounce (x) {
 		const restitution = 0.5;
 		this.bounces--;
 		if (this.multiplies) {
@@ -317,15 +328,13 @@ class Bomb {
 			this.exRadius *= 2;
 			this.damage *= 2;
 		}
-		let dy = map.gradientAt(iCol);
+		let dy = map.gradientAt(x);
 		let normal = this.normalize({x: -dy, y: 1});
 		let dot = this.vx * normal.x + this.vy * normal.y;
 		this.vx = (this.vx - 2 * dot * normal.x) * restitution;
 		this.vy = (this.vy - 2 * dot * normal.y) * restitution;
 
-		this.y = terrainMap[iCol].ySoil
-		//this.x -= this.bRadius * 0.1 * normal.x 
-
+		this.y = map.columnAt(x).ySoil;
 	}	
 
 	normalize(v) {
@@ -346,8 +355,7 @@ class Particle {
 		}
 
 	update () {
-		let iCol = Math.floor(this.x);
-		if (terrainMap[iCol].collisionAt(Math.floor(this.y))) {
+		if (map.collisionAt(this.x, this.y)) {
 				this.vx = this.vy = 0;
 				this.x = Math.floor(this.x);	
 				this.y = Math.floor(this.y);
@@ -393,8 +401,8 @@ class Explosion {
 			for (let j = yTop; j <= yTop + 2 * depth ; j++) {
 				if (this.x + i >= canvas.width) {break;}
 				if (this.x + i < 0) {continue;}
-				if (!terrainMap[this.x + i].yDeforms.includes(j)) {
-					terrainMap[this.x + i].yDeforms.push(j);
+				if (!map.columnAt(this.x + i).yDeforms.includes(j)) {
+					map.columnAt(this.x + i).yDeforms.push(j);
 				}
 
 			}
@@ -454,16 +462,12 @@ class Column {
 		}
 	}
 
-	collisionAt (y) {
-		return (y > this.ySoil && !this.yDeforms.includes(y)); 
-	}
 }
 
 class Slime {
 	constructor(bomb) {
 		this.segments = [];
-		let initialX = Math.floor(bomb.x );
-		this.segments.push({x: initialX, y: terrainMap[initialX].ySoil })
+		this.segments.push({x: bomb.x, y: map.columnAt(bomb.x).ySoil })
 		this.vx = bomb.vx;
 		this.timestamp = 0;
 		this.size = 15;
@@ -488,12 +492,12 @@ class Slime {
 					newX = canvas.width - 1;
 					this.size--;
 				}
-				let newY = terrainMap[Math.floor(newX)].ySoil;
+				let newY = map.columnAt(newX).ySoil;
 				this.segments.unshift({x: newX, y: newY});
 				let startX = Math.floor(Math.min(this.segments[0].x, this.segments[1].x));
 				let endX = Math.floor(Math.max(this.segments[0].x, this.segments[1].x));
 				for (let i = startX ; i <= endX ; i++) {
-					terrainMap[i].slimed = true;
+					map.columnAt(i).slimed = true;
 				}
 		}
 	
@@ -513,8 +517,9 @@ class Slime {
  }
 
 
-
+map = new Map();
 gameLoop(0);
+
 
 function gameLoop(time) {
 
@@ -565,7 +570,7 @@ function gameLoop(time) {
 	break; 
 
  	case phase.START_GAME:
-    	map.gen();
+    	map = new Map();
     	tanks.length = 0;
     	players.forEach ( p => p.spawnTank() );
     	particles.length = 0;
@@ -633,7 +638,7 @@ function gameLoop(time) {
 
   	case phase.FIRING:
 	  if (bombs.length == 0 && explosions.length == 0 && slimes.length == 0 &&
-	  		terrainMap.every( e => e.yDeforms.length == 0)) {
+	  		map.terrain.every( e => e.yDeforms.length == 0)) {
 	  			game.state = phase.END_TURN;
 	  		}
 	break;
