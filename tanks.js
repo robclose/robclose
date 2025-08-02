@@ -14,6 +14,7 @@ let keys = [];
 let map;
 let particles = [];
 let timestamp = 0;
+let hilliness;
 const gravity = 0.01;
 const colourSoil = "sienna"
 const colourRock = "#4f2706"
@@ -43,23 +44,23 @@ const pColours = {
 }
 
 class Map  {
-	constructor () {
+	constructor (fluctuation, dDamping, slopeDamping, limitTop, limitBottom) {
 		this.terrain = [];
 		let slope = 0;
 		let dSlope = 0;
-		this.terrain[0] = new Column(520);
+		this.terrain[0] = new Column(canvas.height * 0.75);
 
 		for (let i = 1 ; i < canvas.width ; i++) {
 
 			let ySoil;
-			dSlope += (Math.random() - 0.5);
-			dSlope *= 0.9;
+			dSlope += (Math.random() - 0.5) * fluctuation;
+			dSlope *= dDamping; 
 			slope += dSlope ;
-			slope *= 0.8;
+			slope *= slopeDamping; 
 			ySoil = (this.columnAt(i-1).ySoil + slope);
 			this.terrain[i] = new Column(ySoil);
-			if (ySoil < 400) { dSlope += 0.1; slope += 0.5; }
-			if (ySoil > 550) { dSlope -= 0.1; slope -= 0.5; }
+			if (ySoil < limitTop) { dSlope += 0.1; slope += 0.5; } 
+			if (ySoil > limitBottom) { dSlope -= 0.1; slope -= 0.5; }
 			}
 		}	
 
@@ -533,20 +534,22 @@ function startGame() {
 	playerSelection.forEach ( cb => {
 		players.push(new Player(pColours[cb.value]))
 	});
-		
+
+	hilliness = document.getElementById('hilliness').value;
 	canvas.style.display = "";
 	canvasSky.style.display = "";
 
 	ctxSky.drawImage(nightsky, 0, 0, canvasSky.width, canvasSky.height);
 	document.getElementById("setupPlayers").style.display = "none";
-	document.getElementById("spok").style.display = "none";
+	document.getElementById("spRange").style.display = "none";
+	document.getElementById("spButton").style.display = "none";
 	gameLoop(0);
 }
 
 function gameLoop(time) {
  
  if (game.state === phase.START_GAME) {
-    	map = new Map();
+    	map = new Map(hilliness, 0.88, 0.92, canvas.height * 0.50, canvas.height * 0.92);
     	tanks.length = 0;
     	players.forEach ( p => p.spawnTank() );
     	particles.length = 0;
@@ -626,7 +629,7 @@ switch (game.state) {
   		ctx.font = "32px monospace";
 			ctx.textAlign = "center";	
 			ctx.fillText(`Game over, ${tanks[0].player.pColour.name} Player wins!`, 
-			canvas.width / 2, canvas.height / 2);
+			canvas.width * 0.5, canvas.height * 0.33);
   	break;
   }
 

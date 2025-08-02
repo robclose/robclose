@@ -8,14 +8,16 @@
     body {background: #111; color: #eee; font-family: monospace; text-align: center; }
     button {padding: 4px; margin: 2px 10px;font-size: 15px; font-family: monospace; }
     div.controls {background-color: darkslateblue; margin: auto; width: 800px ;padding:10px; }
-    div.setupPlayers {text-align: left; margin-left: 300px}
+    div.setupPlayers {text-align: left; margin-left: 300px;margin-right: 200px; padding:10px 50px; background-color: darkslategrey; }
   </style>
 </head>
 <body>
   <div style="width: 800px; height: 600px; margin: 0 auto">
-    <div class="setupPlayers" id="setupPlayers">Select player colours: 
+    <div class="setupPlayers" id="setupPlayers">Select player colours: <br><br>
   </div>
-  <div class="setupPlayers" ><button id="spok" type="button">OK</button></div>
+  <div class="setupPlayers" id="spRange">Hilliness:<input id="hilliness" type="range" min=0.1 max=0.7 step=0.1 />
+  </div>
+  <div class="setupPlayers" id="spButton"><button id="spok" type="button">OK</button></div>
     <div style="position:relative;">
     <canvas id="skyCanvas" width="800" height="600" style="z-index: 0;"></canvas>
     <canvas id="terrainCanvas" width="800" height="600" style="z-index: 1;"></canvas>
