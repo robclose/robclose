@@ -221,8 +221,6 @@ class Tank {
 		if (number < proj.burst) { 
 			setTimeout( () => { this.fire(type, number)}, proj.timeout);
 		}
-		
-		
 	}
 	
 	killed () {
@@ -277,7 +275,6 @@ class Bomb {
 						else {
 						 explosions.push(new Explosion(this));
 						}
-					
 			}
 
 		this.x += this.vx;
@@ -382,7 +379,6 @@ class Explosion {
 					t.health -= this.damage;
 					if (t.health <= 0) t.killed();
 				}
-					
 		});
 
 		for (let i = -1 * this.radius ; i < this.radius + 1 ; i++) {
@@ -396,7 +392,6 @@ class Explosion {
 				if (!map.columnAt(this.x + i).yDeforms.includes(j)) {
 					map.columnAt(this.x + i).yDeforms.push(j);
 				}
-
 			}
 		}	
 	}
@@ -439,7 +434,6 @@ class Column {
 			this.ySoil++
 			this.yRock = Math.max(this.yRock, this.ySoil);
 			this.yDeforms.shift();
-		
 		}
 	}
 
@@ -471,7 +465,6 @@ class Slime {
 		this.vx *= 0.99;
 		this.vx = Math.min(this.vx, 1.0);
 		this.vx = Math.max(this.vx, -1.0);
-
 
 		if (time - this.timestamp > 100) {
 			this.timestamp = time;
@@ -508,9 +501,8 @@ class Slime {
 		});
 		if (this.stoppedCycles <=0) {this.size--}
 		slimes = slimes.filter( (s) => s.size > 4)	
+	}
 }
- }
-
 
 document.getElementById('controls').style.display = "none";
 canvas.style.display = "none";
@@ -562,7 +554,6 @@ function gameLoop(time) {
 		game.state = phase.START_TURN;
 	}
  
-
 	map.update();
 	players.forEach ( p => p.drawScore());
 	bombs.forEach( b => b.update(time) );
@@ -587,7 +578,6 @@ switch (game.state) {
     			weapon.add(new Option(`${ammo.name} (${ammo.stock})`, key ));
     		}
     		weapon.value = "bomb";
-    		
     	});
     	
     	game.state = phase.AIMING;
@@ -624,7 +614,7 @@ switch (game.state) {
 	  		map.terrain.every( e => e.yDeforms.length == 0)) {
 	  			game.state = phase.END_TURN;
 	  		}
-	break;
+		break;
 
   	case phase.END_TURN:
 			game.activeTank = (game.activeTank + 1) % tanks.length;
