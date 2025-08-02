@@ -100,8 +100,7 @@ class Map  {
 	collisionAt (x, y) {
 		x = Math.floor(x);
 		y = Math.floor(y);
-		let col = this.columnAt(x);
-		return (y > col.ySoil && !col.yDeforms.includes(y)); 
+		return (y > this.terrain[x].ySoil && !this.terrain[x].yDeforms.includes(y)); 
 	}
 }
 
