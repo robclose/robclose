@@ -75,7 +75,7 @@ let map = {
 			ctx.fillRect(i, c.yRock, 1, canvas.height - c.yRock);
 			if (c.slimed) {
 				ctx.fillStyle = "#66ff00";
-				ctx.fillRect(i, c.ySoil - 8, 1, 10);
+				ctx.fillRect(i, c.ySoil - 6, 1, 8);
 			}
 			
 			for (let yDeform of c.yDeforms) { 
@@ -87,6 +87,8 @@ let map = {
 
 		gradientAt (x) {
 			x = Math.floor(x);
+			if (x <= 5) x = 5;
+			if (x >= canvas.width - 6) x = canvas.width - 6 
 			return (terrainMap[x + 5].ySoil - terrainMap[x - 5].ySoil) * 0.1;
 	}
 }
@@ -150,17 +152,24 @@ class Tank {
 	}
 
 	fall (){
+		this.x = Math.min (canvas.width - 2, this.x);
+		this.x = Math.max (2, this.x);
 		this.y = terrainMap[Math.floor(this.x)].ySoil; 
 		if (this.y > canvas.height) this.killed();
 	}
 
 	move () {
-		if (keys.includes('z')) this.x -= 0.1;
-		if (keys.includes('x')) this.x += 0.1;
+		if (!terrainMap[Math.floor(this.x)].slimed) {
+			if (keys.includes('z')) this.x -= 0.1;
+			if (keys.includes('x')) this.x += 0.1;
+		}
 	}
 	
 	update() {
 		if (this.alive) {
+			if (terrainMap[Math.floor(this.x)].slimed) {
+			this.x += map.gradientAt(Math.floor(this.x)) * 0.05;
+			}
 			this.fall();
 			ctx.fillStyle = this.player.pColour.colour;
 			ctx.strokeStyle= this.player.pColour.colour;
@@ -209,7 +218,7 @@ class Tank {
 		
 		
 	}
-
+	
 	killed () {
 		this.alive = false;
 		for (let i = 0; i < 20 ; i++) {
@@ -261,7 +270,6 @@ class Bomb {
 							slimes.push(new Slime(this))
 						}
 						else {
-
 						 explosions.push(new Explosion(this))
 						}
 					
@@ -454,39 +462,56 @@ class Column {
 class Slime {
 	constructor(bomb) {
 		this.segments = [];
-		let initialX = Math.floor(bomb.x);
-		debugger;
+		let initialX = Math.floor(bomb.x );
 		this.segments.push({x: initialX, y: terrainMap[initialX].ySoil })
-		this.vx = 0;
+		this.vx = bomb.vx;
 		this.timestamp = 0;
+		this.size = 15;
+		bombs = bombs.filter((e) => e !== bomb);
 	}
 
 	update (time) {
-		this.vx = map.gradientAt(this.segments[0].x) * 0.3;
+		this.vx += map.gradientAt(this.segments[0].x) * 0.02
+		this.vx *= 0.97;
+		
+
 		if (time - this.timestamp > 100) {
 			this.timestamp = time;
 			let newX = this.segments[0].x + this.vx
-			let newY = terrainMap[Math.floor(newX)].ySoil;
-			this.segments.unshift({x: newX, y: newY});
-			let startX = Math.floor(Math.min(this.segments[0].x, this.segments[1].x));
-			let endX = Math.floor(Math.max(this.segments[0].x, this.segments[1].x));
+			
+			if (newX < 0) {
+				newX = 0 ;
+				this.size--;
+				}
+				if (newX > canvas.width - 1)
+				{
+					newX = canvas.width - 1;
+					this.size--;
+				}
+				let newY = terrainMap[Math.floor(newX)].ySoil;
+				this.segments.unshift({x: newX, y: newY});
+				let startX = Math.floor(Math.min(this.segments[0].x, this.segments[1].x));
+				let endX = Math.floor(Math.max(this.segments[0].x, this.segments[1].x));
 				for (let i = startX ; i <= endX ; i++) {
 					terrainMap[i].slimed = true;
 				}
-	}
+		}
 	
-		if (this.segments.length > 15) this.segments.pop();
+	
+		if (this.segments.length >= this.size) this.segments.pop();
 
 		this.segments.forEach( (s, i) => {
-			let r = (15 - i) * 0.5;
+			let r = (this.size - i) * 0.5;
 			ctx.fillStyle = '#66ff00';
 			ctx.beginPath();
 			ctx.arc(s.x, s.y - r, r, 0, 2 * Math.PI);
 			ctx.fill();
 		});
-	}
-
+		if (Math.abs(this.vx) < 0.005) { this.size -= 1 }
+		slimes = slimes.filter( (s) => s.segments.length > 0 && s.size > 4)	
 }
+ }
+
 
 
 gameLoop(0);
@@ -556,6 +581,7 @@ function gameLoop(time) {
 	tanks.forEach( t => t.update() );
 	explosions.forEach( e => e.update() );
 	slimes.forEach( s => s.update(time));
+	if (tanks.length == 0) { game.state = phase.START_GAME; }
 
   switch (game.state) {
 
@@ -595,10 +621,10 @@ function gameLoop(time) {
 				canvas.width / 2, canvas.height / 2); 
 				}
 
-			if (timeElapsed > 3000 && timeElapsed < 13000) {
+			if (timeElapsed > 3000 && timeElapsed < 23000) {
 				ctx.font = "18px monospace"
 				ctx.textAlign = "center"	
-				ctx.fillText(`Move ${tanks[game.activeTank].player.pColour.name} with Z & X ${(13 - timeElapsed/1000).toFixed(1)}`, 
+				ctx.fillText(`Move ${tanks[game.activeTank].player.pColour.name} with Z & X ${(23 - timeElapsed/1000).toFixed(1)}`, 
 				canvas.width / 2, 30); 
 				tanks[game.activeTank].move();
 				}
@@ -606,7 +632,7 @@ function gameLoop(time) {
   	break;
 
   	case phase.FIRING:
-	  if (bombs.length == 0 && explosions.length == 0 &&
+	  if (bombs.length == 0 && explosions.length == 0 && slimes.length == 0 &&
 	  		terrainMap.every( e => e.yDeforms.length == 0)) {
 	  			game.state = phase.END_TURN;
 	  		}
