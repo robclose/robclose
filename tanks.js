@@ -515,7 +515,6 @@ class Slime {
 			ctx.fill();
 		});
 		if (this.stoppedCycles <=0) {this.size--}
-		slimes = slimes.filter( (s) => s.size > 4)	
 	}
 }
 
@@ -577,6 +576,7 @@ function gameLoop(time) {
 	damages = damages.filter( d => d.life > 0);
 	particles = particles.filter((p) => p.x > 0 && p.x < canvas.width && p.y < canvas.height);
 	explosions = explosions.filter((e) => e.radius > 0);
+	slimes = slimes.filter( (s) => s.size > 4);	
 
 	map.update();
 	players.forEach ( p => p.drawScore());
