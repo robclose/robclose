@@ -10,6 +10,7 @@ let explosions = [];
 let players = [];
 let tanks = [];
 let slimes = [];
+let damages = [];
 let keys = [];
 let map;
 let particles = [];
@@ -162,7 +163,7 @@ class Tank {
 		this.x = Math.min (canvas.width - 2, this.x);
 		this.x = Math.max (2, this.x);
 		this.y = map.columnAt(this.x).ySoil; 
-		if (this.y > canvas.height) this.killed();
+		if (this.y > canvas.height) this.alive = false;
 	}
 
 	move () {
@@ -173,43 +174,46 @@ class Tank {
 	}
 	
 	update() {
-		if (this.alive) {
-			if (map.columnAt(this.x).slimed) {
+		if (map.columnAt(this.x).slimed) {
 			this.x += map.gradientAt(this.x) * 0.05;
-			}
-			this.fall();
-			ctx.fillStyle = this.player.pColour.colour;
-			ctx.strokeStyle= this.player.pColour.colour;
-			ctx.fillRect(this.x - 2, this.y - 5, 5, 1);
-			ctx.fillRect(this.x - 3, this.y - 4, 7, 2);
-			ctx.fillRect(this.x - 7, this.y - 2, 15, 2);
-			ctx.fillRect(this.x - 8, this.y, 17, 3);
-			ctx.fillStyle = colourTankTrack;
-			ctx.fillRect(this.x - 8, this.y + 2, 17, 3);
-			ctx.fillRect(this.x - 6, this.y + 5, 13, 1);
-			ctx.fillStyle = colourTankWheel;
-			ctx.fillRect(this.x - 7, this.y + 3, 1, 1);
-			ctx.fillRect(this.x - 5, this.y + 3, 2, 2);
-			ctx.fillRect(this.x - 2, this.y + 3, 2, 2);
-			ctx.fillRect(this.x + 1, this.y + 3, 2, 2);
-			ctx.fillRect(this.x + 4, this.y + 3, 2, 2);
-			ctx.fillRect(this.x + 7, this.y + 3, 1, 1);
-			ctx.beginPath(); 
-			ctx.moveTo( this.x, this.y - 4); 
-			ctx.lineTo(this.x + 10 * Math.cos(this.angle), this.y - 4 - 10 * Math.sin(this.angle)); 
-			ctx.closePath();
-			ctx.stroke(); 
-			if (tanks[game.activeTank] === this) {
-				ctx.strokeRect(this.x + 50 * Math.cos(this.angle) - 2, this.y - 4 - 50 * Math.sin(this.angle) - 2, 4, 4 )
-			}
 		}
-		this.drawHealth();
-	}
+		this.fall();
 
-		drawHealth () {
+		//Draw tank body
+		ctx.fillStyle = this.player.pColour.colour;
+		ctx.strokeStyle= this.player.pColour.colour;
+		ctx.fillRect(this.x - 2, this.y - 5, 5, 1);
+		ctx.fillRect(this.x - 3, this.y - 4, 7, 2);
+		ctx.fillRect(this.x - 7, this.y - 2, 15, 2);
+		ctx.fillRect(this.x - 8, this.y, 17, 3);
+		ctx.fillStyle = colourTankTrack;
+		ctx.fillRect(this.x - 8, this.y + 2, 17, 3);
+		ctx.fillRect(this.x - 6, this.y + 5, 13, 1);
+		ctx.fillStyle = colourTankWheel;
+		ctx.fillRect(this.x - 7, this.y + 3, 1, 1);
+		ctx.fillRect(this.x - 5, this.y + 3, 2, 2);
+		ctx.fillRect(this.x - 2, this.y + 3, 2, 2);
+		ctx.fillRect(this.x + 1, this.y + 3, 2, 2);
+		ctx.fillRect(this.x + 4, this.y + 3, 2, 2);
+		ctx.fillRect(this.x + 7, this.y + 3, 1, 1);
+
+		//Draw turret
+		ctx.beginPath(); 
+		ctx.moveTo( this.x, this.y - 4); 
+		ctx.lineTo(this.x + 10 * Math.cos(this.angle), this.y - 4 - 10 * Math.sin(this.angle)); 
+		ctx.closePath();
+		ctx.stroke(); 
+
+		//Draw reticle
+		if (tanks[game.activeTank] === this) {
+			ctx.strokeRect(this.x + 50 * Math.cos(this.angle) - 2, this.y - 4 - 50 * Math.sin(this.angle) - 2, 4, 4 )
+		}
+
+		//Draw health bar
 		ctx.fillStyle = this.player.pColour.colour;
 		ctx.strokeStyle = this.player.pColour.colour;
-    ctx.font = "18px monospace";
+    ctx.font = "12px monospace";
+    ctx.fillText(this.health, canvas.width - 180, (players.indexOf(this.player)+1) * 20 + 12)
 		ctx.strokeRect(canvas.width - 150, (players.indexOf(this.player)+1) * 20 , 100, 15);
 		ctx.fillRect(canvas.width - 150, (players.indexOf(this.player)+1) * 20, this.health, 15);
 	}
@@ -222,21 +226,6 @@ class Tank {
 		if (number < proj.burst) { 
 			setTimeout( () => { this.fire(type, number)}, proj.timeout);
 		}
-	}
-	
-	killed () {
-		this.alive = false;
-		for (let i = 0; i < 20 ; i++) {
-						particles.push(new Particle(this));
-					}
-		let survivors = tanks.filter( (t) => t.alive )
-		if (survivors.length == 1) {
-			game.state = phase.GAME_OVER;
-			game.activeTank = tanks.indexOf(survivors[0]);
-			survivors[0].player.score++;
-			setTimeout( () => game.state = phase.START_GAME, 5000);
-		}
-		tanks = survivors;
 	}
 }
 
@@ -264,37 +253,35 @@ class Bomb {
 		
 		if (!this.timeFired) this.timeFired = time;
 
-		if (this.fuse && this.timeFired + this.fuse * 1000 < time) { explosions.push(new Explosion(this)) }
-
-		if (map.collisionAt(this.x, this.y)) {
-					if (this.bounces) {
-						this.bounce(this.x);
-						} 
-						else if (this.spawns === "slime") {
-							slimes.push(new Slime(this));
-						}
-						else {
-						 explosions.push(new Explosion(this));
-						}
-			}
-
-		this.x += this.vx;
-		this.y += this.vy;
-		if (this.hasMass) { 
-			this.vy += gravity; 
+		if (this.fuse && this.timeFired + this.fuse * 1000 < time) { 
+			explosions.push(new Explosion(this));
+			return;
 		}
-		
+
 		if (!this.fuse && !this.spawns) {
 			let otherTanks = tanks.filter( t => t.player !== this.player); 
 			if (otherTanks.some( t => 
 						Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.bRadius + t.radius
 			)) {
 				explosions.push(new Explosion(this));
+				return;
 			}
 		}
 
-		bombs = bombs.filter((b) => b.x > 0 && b.x < canvas.width && 
-																b.y < canvas.height && (b.y > 0 || this.hasMass));
+		if (map.collisionAt(this.x, this.y)) {
+			if (this.bounces) {
+				this.bounce(this.x);
+			} 
+			else if (this.spawns === "slime") {
+				slimes.push(new Slime(this));
+				return;
+			}
+			else {
+			 explosions.push(new Explosion(this));
+			 return;
+			}
+		}
+		
 		ctx.fillStyle = this.colour;
 		ctx.fillRect(this.x - this.bRadius, this.y - this.bRadius, 2 * this.bRadius, 2 * this.bRadius);
 		if (this.fuse) {
@@ -309,6 +296,13 @@ class Bomb {
 			ctx.lineTo(this.x + 5, 25); 
 			ctx.closePath();
 			ctx.fill(); 
+		}
+
+
+		this.x += this.vx;
+		this.y += this.vy;
+		if (this.hasMass) { 
+			this.vy += gravity; 
 		}
 	}
 
@@ -339,7 +333,6 @@ class Particle {
 	constructor(tank) {
 		this.x = tank.x;
 		this.y = tank.y;
-		//this.bias = tank.x - explosion.x
 		this.vx = Math.random() * 2 - 1;
 		this.vy = -Math.random() * 1;
 		this.colour = tank.player.pColour.colour;
@@ -355,8 +348,6 @@ class Particle {
 		this.x += this.vx;
 		this.y += this.vy;
 		this.vy += gravity * 2;
-
-		particles = particles.filter((p) => p.x > 0 && p.x < canvas.width && p.y < canvas.height);
 
 		ctx.fillStyle = this.colour;
 		ctx.fillRect(this.x,this.y,2,2);
@@ -377,8 +368,13 @@ class Explosion {
 	explode () {
 		tanks.forEach( (t) => {
 				if (Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.radius + t.radius) {
-					t.health -= this.damage;
-					if (t.health <= 0) t.killed();
+					damages.push(new Damage(t, this.damage));
+					if (t.health <= 0) {
+						t.alive = false;
+						for (let i = 0; i < 20 ; i++) {
+							particles.push(new Particle(t));
+						}
+					}
 				}
 		});
 
@@ -403,7 +399,26 @@ class Explosion {
 		ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
 		ctx.fill();
 		this.radius--;
-		explosions = explosions.filter((e) => e.radius > 0)
+	}
+}
+
+class Damage {
+	constructor(tank, points) {
+		this.points = points;
+		this.life = 60;
+		this.colour = tank.player.pColour.colour;
+		this.x = Math.floor(tank.x);
+		this.y = Math.floor(tank.y) - 20;
+		tank.health -= points;
+	}
+
+	update () {
+		ctx.font = "10px monospace";
+		ctx.textAlign = "center";
+		ctx.fillStyle = this.colour;
+		ctx.fillText (this.points, this.x, this.y);
+		this.y--;
+		this.life--;
 	}
 }
 
@@ -455,7 +470,7 @@ class Slime {
 		this.segments = [];
 		this.segments.push({x: bomb.x, y: map.columnAt(bomb.x).ySoil })
 		this.vx = bomb.vx;
-		this.timestamp = 0;
+		this.timer = 0;
 		this.size = 15;
 		this.stoppedCycles = 8;
 		bombs = bombs.filter((e) => e !== bomb);
@@ -467,8 +482,8 @@ class Slime {
 		this.vx = Math.min(this.vx, 1.0);
 		this.vx = Math.max(this.vx, -1.0);
 
-		if (time - this.timestamp > 100) {
-			this.timestamp = time;
+		if (time - this.timer > 100) {
+			this.timer = time;
 			if (Math.abs(this.vx) < 0.05) { this.stoppedCycles-- }
 			let newX = this.segments[0].x + this.vx;
 			
@@ -489,7 +504,6 @@ class Slime {
 					map.columnAt(i).slimed = true;
 				}
 		}
-	
 	
 		if (this.segments.length >= this.size) this.segments.pop();
 
@@ -543,7 +557,7 @@ function startGame() {
 	document.getElementById("setupPlayers").style.display = "none";
 	document.getElementById("spRange").style.display = "none";
 	document.getElementById("spButton").style.display = "none";
-	gameLoop(0);
+	requestAnimationFrame(gameLoop);
 }
 
 function gameLoop(time) {
@@ -556,22 +570,25 @@ function gameLoop(time) {
 		game.activeTank = Math.floor(Math.random() * tanks.length);
 		game.state = phase.START_TURN;
 	}
- 
+
+	bombs = bombs.filter((b) => b.x > 0 && b.x < canvas.width && 
+																b.y < canvas.height && (b.y > 0 || b.hasMass));
+
+	damages = damages.filter( d => d.life > 0);
+	particles = particles.filter((p) => p.x > 0 && p.x < canvas.width && p.y < canvas.height);
+	explosions = explosions.filter((e) => e.radius > 0);
+
 	map.update();
 	players.forEach ( p => p.drawScore());
 	bombs.forEach( b => b.update(time) );
 	particles.forEach( p => p.update() );
-	tanks.forEach( t => t.update() );
+	tanks.filter( t => t.alive).forEach( t => t.update() );
 	explosions.forEach( e => e.update() );
 	slimes.forEach( s => s.update(time));
-	if (tanks.length == 0) { game.state = phase.START_GAME; }
+	damages.forEach( d => d.update());
 
 switch (game.state) {
     case phase.START_TURN:
-    	if (tanks.length == 0) {
-    		game.state = phase.START_GAME;
-    		break;
-    	}
     	document.getElementById('controls').style.display="";
     	document.getElementById('powerRange').value = tanks[game.activeTank].power;
     	let weapon = document.getElementById('weapon');
@@ -599,7 +616,7 @@ switch (game.state) {
     		ctx.font = "32px monospace"
 				ctx.textAlign = "center"	
 				ctx.fillText(`Ready ${tanks[game.activeTank].player.pColour.name} Player`, 
-				canvas.width / 2, canvas.height / 2); 
+				canvas.width * 0.5, canvas.height * 0.33); 
 				}
 
 			if (timeElapsed > 3000 && timeElapsed < 23000) {
@@ -620,16 +637,31 @@ switch (game.state) {
 		break;
 
   	case phase.END_TURN:
-			game.activeTank = (game.activeTank + 1) % tanks.length;
-	  	game.state = phase.START_TURN;
+  		tanks = tanks.filter( (t) => t.alive )
+  		if (tanks.length > 1) {
+  			game.activeTank = (game.activeTank + 1) % tanks.length;
+	  		game.state = phase.START_TURN;
+	  		break;
+  		}
+  		else if (tanks.length === 1) {
+  			tanks[0].player.score++;
+  			game.activeTank = 0;
+  		}
+  		game.state = phase.GAME_OVER;
+  		setTimeout( () => game.state = phase.START_GAME, 5000);
   	break;
 
   	case phase.GAME_OVER:
-  		ctx.fillStyle = tanks[0].player.pColour.colour;
   		ctx.font = "32px monospace";
 			ctx.textAlign = "center";	
-			ctx.fillText(`Game over, ${tanks[0].player.pColour.name} Player wins!`, 
-			canvas.width * 0.5, canvas.height * 0.33);
+			if (tanks[0]) {
+				ctx.fillStyle = tanks[0].player.pColour.colour;
+				ctx.fillText(`Game over, ${tanks[0].player.pColour.name} Player wins!`, 
+					canvas.width * 0.5, canvas.height * 0.33);
+			} else {
+				ctx.fillStyle = "grey"
+				ctx.fillText(`Game over, no winner!`, canvas.width * 0.5, canvas.height * 0.33);
+			}
   	break;
   }
 
