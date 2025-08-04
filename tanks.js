@@ -143,12 +143,12 @@ class Tank {
 	this.radius = 6;
 	this.ammo = {
 		particle: {name: "Particle Beam", stock: 3, burst: 15, timeout: 50, colour: "red", exRadius: 2, bRadius: 2, damage: 2, hasMass: false, bounces: false, fuse: false},
-		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, damage: 30, hasMass: true, bounces: false, fuse: false},
-		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, damage: 55, hasMass: true, bounces: false, fuse: false},
-		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 25, bRadius: 4, damage: 40, hasMass: true, bounces: 20, fuse: 12, multiplies: false},
-		cluster: {name: "Cluster Bombs", stock: 3, burst: 5, timeout: 400, colour: "pink", exRadius: 10, bRadius: 3, damage: 15, hasMass: true, bounces: false, fuse: false},
-		bouncebomb: {name: "Bouncing Bomb", stock: 5, burst: 1, timeout: null, colour: "#FF69B4", exRadius: 10, bRadius: 2, damage: 10, hasMass: true, bounces: 2, fuse: false, multiplies: true},
-		slimebomb: {name: "Slime Bomb", stock: 10, burst: 1, timeout: null, colour: "#66ff00", exRadius: 0, bRadius: 6, damage: 10, hasMass: true, bounces: false, fuse: false, spawns: "slime"}
+		bomb: {name: "Bomb", stock: 100, burst: 1, timeout: null, colour: "gold", exRadius: 20, bRadius: 3, damage: 30, hasMass: true, bounces: false, fuse: false, sound:"boom"},
+		bigbomb: {name: "Big Bomb", stock: 1, burst: 1, timeout: null, colour: "white", exRadius: 40, bRadius: 8, damage: 55, hasMass: true, bounces: false, fuse: false, sound: "bigboom"},
+		grenade: {name: "Grenade", stock: 3, burst: 1, timeout: null, colour: "skyblue", exRadius: 25, bRadius: 4, damage: 40, hasMass: true, bounces: 20, fuse: 12, multiplies: false, sound: "boom"},
+		cluster: {name: "Cluster Bombs", stock: 3, burst: 5, timeout: 400, colour: "pink", exRadius: 10, bRadius: 3, damage: 15, hasMass: true, bounces: false, fuse: false, sound: "boom"},
+		bouncebomb: {name: "Bouncing Bomb", stock: 5, burst: 1, timeout: null, colour: "#FF69B4", exRadius: 10, bRadius: 2, damage: 10, hasMass: true, bounces: 2, fuse: false, multiplies: true, sound: "boom"},
+		slimebomb: {name: "Slime Bomb", stock: 10, burst: 1, timeout: null, colour: "#66ff00", exRadius: 0, bRadius: 6, damage: 10, hasMass: true, bounces: false, fuse: false, spawns: "slime", sound: "splash"}
 		};
 	}
 
@@ -246,6 +246,7 @@ class Bomb {
 		this.damage = ammo.damage;
 		this.spawns = ammo.spawns;
 		this.fuse = ammo.fuse;
+		this.sound = ammo.sound;
 		this.timeFired = null;
 		this.power = ammo.hasMass ? tank.power : 80;
 		this.vx = this.power * Math.cos(tank.angle) / 20;
@@ -364,14 +365,15 @@ class Explosion {
 		this.damage = bomb.damage;
 		this.radius = bomb.exRadius;
 		this.player = bomb.player;
+		this.sound = bomb.sound;
 		this.explode();
 		bombs = bombs.filter((e) => e !== bomb);
 	}
 
 	explode () {
 		
-		playTrack(tracks.fire);
-		
+		playTrack(tracks[this.sound]);
+
 		tanks.forEach( (t) => {
 				if (Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.radius + t.radius) {
 					damages.push(new Damage(t, this.damage));
@@ -479,6 +481,7 @@ class Slime {
 		this.timer = 0;
 		this.size = 15;
 		this.stoppedCycles = 8;
+		playTrack(tracks.splash);
 		bombs = bombs.filter((e) => e !== bomb);
 	}
 
@@ -554,7 +557,11 @@ async function startGame() {
 		players.push(new Player(pColours[cb.value]))
 	});
 
-	tracks.fire = await loadFile('sounds/tank-fire.mp3');
+	tracks.fire = await loadFile('sounds/fire.mp3');
+	tracks.boom = await loadFile('sounds/boom.mp3');
+	tracks.bigboom = await loadFile('sounds/big-boom.mp3');
+	tracks.splash = await loadFile('sounds/splash.mp3');
+	tracks.bounce = await loadFile('sounds/bounce.mp3');
 
 	hilliness = document.getElementById('hilliness').value;
 	canvas.style.display = "";
