@@ -1,5 +1,4 @@
 "use strict";
-
 const canvas = document.getElementById('terrainCanvas');
 const canvasSky = document.getElementById('skyCanvas');
 const ctx = canvas.getContext('2d');
