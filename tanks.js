@@ -369,12 +369,6 @@ class Explosion {
 		tanks.forEach( (t) => {
 				if (Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.radius + t.radius) {
 					damages.push(new Damage(t, this.damage));
-					if (t.health <= 0) {
-						t.alive = false;
-						for (let i = 0; i < 20 ; i++) {
-							particles.push(new Particle(t));
-						}
-					}
 				}
 		});
 
@@ -410,6 +404,12 @@ class Damage {
 		this.x = Math.floor(tank.x);
 		this.y = Math.floor(tank.y) - 20;
 		tank.health -= points;
+		if (tank.health <= 0) {
+			tank.alive = false;
+			for (let i = 0; i < 20 ; i++) {
+				particles.push(new Particle(tank));
+			}
+		}
 	}
 
 	update () {
