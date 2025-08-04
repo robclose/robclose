@@ -1,9 +1,11 @@
 "use strict";
+
 const canvas = document.getElementById('terrainCanvas');
 const canvasSky = document.getElementById('skyCanvas');
 const ctx = canvas.getContext('2d');
 const ctxSky = canvasSky.getContext('2d');
 const nightsky = document.getElementById('nightsky');
+const ctxAudio = new AudioContext();
 let bombs = [];
 let explosions = [];
 let players = [];
@@ -28,6 +30,7 @@ const phase = {
   END_TURN: "end_turn",
   GAME_OVER: "game_over",
 };
+const tracks = {};
 let game = {
 	state : phase.START_GAME,
 	activeTank : 0
@@ -221,6 +224,7 @@ class Tank {
 		game.state = phase.FIRING;
 		let proj = this.ammo[type];
 		bombs.push(new Bomb(this, proj));
+		playTrack(tracks.fire);
 		number++; 
 		if (number < proj.burst) { 
 			setTimeout( () => { this.fire(type, number)}, proj.timeout);
@@ -365,6 +369,9 @@ class Explosion {
 	}
 
 	explode () {
+		
+		playTrack(tracks.fire);
+		
 		tanks.forEach( (t) => {
 				if (Math.sqrt((this.x - t.x)**2 + (this.y - t.y)**2) < this.radius + t.radius) {
 					damages.push(new Damage(t, this.damage));
@@ -539,13 +546,15 @@ Object.entries(pColours).forEach( ([key, col]) => {
 
 setupHandlers();
 
-function startGame() {
+async function startGame() {
 
 	let playerSelection = document.getElementById("setupPlayers").querySelectorAll("input:checked");
 	if (playerSelection.length < 2) { return false; }
 	playerSelection.forEach ( cb => {
 		players.push(new Player(pColours[cb.value]))
 	});
+
+	tracks.fire = await loadFile('sounds/tank-fire.mp3');
 
 	hilliness = document.getElementById('hilliness').value;
 	canvas.style.display = "";
@@ -720,4 +729,22 @@ function setupHandlers () {
 		document.getElementById('powerRange').stepUp();
 		tanks[game.activeTank].power = document.getElementById('powerRange').value;
 	});
+}
+
+async function getFile(filePath) {
+	const response = await fetch(filePath);
+	const arrayBuffer = await response.arrayBuffer();
+	const audioBuffer = await ctxAudio.decodeAudioData(arrayBuffer);
+	return audioBuffer;
+}
+async function loadFile(filePath) {
+	const track = await getFile(filePath);
+	return track;
+}
+function playTrack(audioBuffer) {
+	const trackSource = ctxAudio.createBufferSource();
+	trackSource.buffer = audioBuffer;
+	trackSource.connect(ctxAudio.destination);
+	trackSource.start()
+	return trackSource;
 }
