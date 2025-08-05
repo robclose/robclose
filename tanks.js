@@ -557,11 +557,11 @@ async function startGame() {
 		players.push(new Player(pColours[cb.value]))
 	});
 
-	tracks.fire = await loadFile('sounds/fire.mp3');
-	tracks.boom = await loadFile('sounds/boom.mp3');
-	tracks.bigboom = await loadFile('sounds/big-boom.mp3');
-	tracks.splash = await loadFile('sounds/splash.mp3');
-	tracks.bounce = await loadFile('sounds/bounce.mp3');
+	tracks.fire = await getFile('sounds/fire.mp3');
+	tracks.boom = await getFile('sounds/boom.mp3');
+	tracks.bigboom = await getFile('sounds/big-boom.mp3');
+	tracks.splash = await getFile('sounds/splash.mp3');
+	tracks.bounce = await getFile('sounds/bounce.mp3');
 
 	hilliness = document.getElementById('hilliness').value;
 	canvas.style.display = "";
@@ -744,10 +744,7 @@ async function getFile(filePath) {
 	const audioBuffer = await ctxAudio.decodeAudioData(arrayBuffer);
 	return audioBuffer;
 }
-async function loadFile(filePath) {
-	const track = await getFile(filePath);
-	return track;
-}
+
 function playTrack(audioBuffer) {
 	const trackSource = ctxAudio.createBufferSource();
 	trackSource.buffer = audioBuffer;
