@@ -20,10 +20,6 @@ class HUD {
         hudCtx.textAlign = "center"	;
         hudCtx.textBaseline = "middle";
         hudCtx.font = "20px monospace";
-        let leftmost = wave1.aliens[0].x;
-        let rightmost = wave1.aliens[wave1.cols - 1].x;
-        let topmost = wave1.aliens[0].y;
-        let bottommost = wave1.aliens[wave1.aliens.length - 1].y;
         if (timeElapsed < 2500) {
             hudCtx.fillText('Analysing alien formation...', gameWidth * 0.5, gameHeight * 0.1); 
             }
@@ -31,34 +27,35 @@ class HUD {
             // Column ticks
             for (let c = 0; c < wave1.cols; c++) {
                 hudCtx.beginPath();
-                hudCtx.moveTo(wave1.aliens[c].x, topmost - 15);
-                hudCtx.lineTo(wave1.aliens[c].x, topmost - 20);
+                hudCtx.moveTo(wave1.aliens[c].x, wave1.topmost - 15);
+                hudCtx.lineTo(wave1.aliens[c].x, wave1.topmost - 20);
                 hudCtx.stroke();
             }   
             // Column tick joiner
             hudCtx.beginPath();
-                hudCtx.moveTo(leftmost, topmost - 20);
-                hudCtx.lineTo(rightmost, topmost - 20);
+                hudCtx.moveTo(wave1.leftmost, wave1.topmost - 20);
+                hudCtx.lineTo(wave1.rightmost, wave1.topmost - 20);
                 hudCtx.stroke();
             // Row ticks
             for (let r = 0; r < wave1.rows; r++) {
                 hudCtx.beginPath();
-                hudCtx.moveTo(leftmost - 15, wave1.aliens[r * wave1.cols + 1].y);
-                hudCtx.lineTo(leftmost - 20, wave1.aliens[r * wave1.cols + 1].y);
+                hudCtx.moveTo(wave1.leftmost - 15, wave1.aliens[r * wave1.cols + 1].y);
+                hudCtx.lineTo(wave1.leftmost - 20, wave1.aliens[r * wave1.cols + 1].y);
                 hudCtx.stroke();
             }  
             // Row tick joiner
             hudCtx.beginPath();
-                hudCtx.moveTo(leftmost - 20, topmost);
-                hudCtx.lineTo(leftmost - 20, bottommost);
+                hudCtx.moveTo(wave1.leftmost - 20, wave1.topmost);
+                hudCtx.lineTo(wave1.leftmost - 20, wave1.bottommost);
                 hudCtx.stroke();
 
             }
+            // Row and column counts
         if (timeElapsed > 2000) {
-            let middleX = leftmost + 0.5 * (rightmost - leftmost);
-            let middleY = topmost + 0.5 * (bottommost - topmost);
-            hudCtx.fillText(wave1.rows, leftmost - 40, middleY );
-            hudCtx.fillText(wave1.cols, middleX, topmost - 40);
+            let middleX = wave1.leftmost + 0.5 * (wave1.rightmost - wave1.leftmost);
+            let middleY = wave1.topmost + 0.5 * (wave1.bottommost - wave1.topmost);
+            hudCtx.fillText(wave1.rows, wave1.leftmost - 40, middleY );
+            hudCtx.fillText(wave1.cols, middleX, wave1.topmost - 40);
             
 
         }
@@ -70,13 +67,10 @@ class Alien {
         this.x = x;
         this.y = y;
         this.size = 10;
-        this.vx = 0.5;
-        this.vy = 0;
     }
     update () {
-        this.x += this.vx;
-        this.y += this.vy;
-        if (this.x >= 750 || this.x <= 50) {this.vx = -this.vx}
+        this.x += wave1.vx;
+        this.y += wave1.vy;
     }
 
     draw () {
@@ -89,12 +83,44 @@ class Wave {
     constructor(rows, cols) {
         this.rows = rows;
         this.cols = cols;
+        this.vx = 1.0;
+        this.nextvx = this.vx;
+        this.vy = 0;
         this.aliens = [];
+        this.descendCounter = 0;
         for (let i = 0; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
                 this.aliens.push(new Alien(100 + j * 15, 150 + i * 15))
             }
         }
+    }
+    update () {
+        if (this.aliens.length == 0) {return}
+        if (this.vx != 0 && (this.rightmost >= 750 || this.leftmost <= 50)) {
+            this.nextvx = -this.vx ;
+            this.vy = 1;
+            this.vx = 0
+            this.descendCounter = 30;
+            }
+        
+        if (this.descendCounter == 0) {
+            this.vy = 0;
+            this.vx = this.nextvx;
+        }
+        if (this.descendCounter >= 0) {
+        this.descendCounter--;
+        }
+
+    }
+    get leftmost () { return this.aliens[0].x  }
+    get topmost () { return this.aliens[0].y  }
+    get rightmost () {
+        let aliensX = this.aliens.map( a => a.x);
+        return Math.max(...aliensX)
+    }
+    get bottommost () {
+        let aliensY = this.aliens.map( a => a.y);
+        return Math.max(...aliensY);
     }
 }
 
@@ -191,6 +217,7 @@ function gameLoop(time) {
             
             for (let a of wave1.aliens) {a.update(); }
             for (let a of wave1.aliens) {a.draw(); }
+            wave1.update();
             hud.drawAnalysis(time - timestamp);
             if (time - timestamp > 10 * 1000) {gamePhase = 'playerChooses'}
             break;
@@ -206,14 +233,14 @@ function gameLoop(time) {
             for (let a of wave1.aliens) {a.draw(); }
             for (let m of missiles) {m.update();}
             for (let m of missiles) {m.draw();}
-
+            wave1.update(); 
             if (missilestoFire > 0 && time - timestamp > 50) {
                 timestamp = time;
                 missilestoFire--;
                 missiles.push(new Missile(wave1.aliens[missilestoFire], guns[Math.floor(Math.random() * 12)]));
             }
 
-            if (wave1.aliens.length == 0) {gamePhase = 'spawnWave'}
+            if (wave1.aliens.length == 0 && missiles.length == 0) {gamePhase = 'spawnWave'}
             break;
 
     }
