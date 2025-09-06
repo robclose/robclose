@@ -5,10 +5,12 @@ const gameCtx = document.getElementById('game-canvas').getContext('2d');
 const hudCtx = document.getElementById('hud-canvas').getContext('2d');
 const gameWidth = document.getElementById('game-canvas').width;
 const gameHeight = document.getElementById('game-canvas').height;
-const canvas = document.getElementById('hud-canvas')
+const canvas = document.getElementById('hud-canvas');
+const ctxAudio = new AudioContext();
 let missiles = [];
 let guns = [];
 let particles = [];
+const sounds = {};
 let timestamp = null;
 let gamePhase = 'start';
 let wave1;
@@ -42,6 +44,26 @@ class HUD {
         hudCtx.font = "20px monospace";
         this.elements = this.elements.filter ( e => e(timeElapsed));
     }
+}
+
+class Sound {
+    constructor(path) {
+        this.path = path;
+        this.audioBuffer = null;
+        this.load();
+    }
+async load () {
+    const response = await fetch(this.path);
+	const arrayBuffer = await response.arrayBuffer();
+	const audioBuffer = await ctxAudio.decodeAudioData(arrayBuffer);
+	this.audioBuffer = audioBuffer;
+}
+play () {
+    const trackSource = ctxAudio.createBufferSource();
+	trackSource.buffer = this.audioBuffer;
+	trackSource.connect(ctxAudio.destination);
+	trackSource.start()
+}
 }
 
 class Alien {
@@ -127,6 +149,7 @@ class Missile {
           this.isDud = true;
           }
         this.hasHitTarget = false;
+        sounds.fire.play();
     }
     update () {
         if (this.hasHitTarget) {
@@ -275,6 +298,8 @@ function gameLoop(time) {
 
         case 'start':
              hud = new HUD();
+             sounds.fire = new Sound('sounds/fire.mp3');
+
             for (let g = 0; g < 12; g++) {
                 guns.push((gameWidth - 100)/12 * g + 50);
                 }
