@@ -17,9 +17,10 @@ let wave1;
 let missilestoFire;
 let hud;
 let result;
-let tables = [2, 3, 4, 5, 10];
+let tables;
 let missilesMax;
 let typedTimeStamp = 0;
+let currentUser = "rob";
 
 class HUD {
     constructor() {
@@ -64,6 +65,93 @@ play () {
 	trackSource.connect(ctxAudio.destination);
 	trackSource.start()
 }
+}
+
+class Fact {
+    constructor(obj) {
+        this.x = obj.x;
+        this.y = obj.y;
+        this.bin = obj.bin ?? 0;
+        this.lastSeen = obj.lastSeen ?? null;
+        this.streak = obj.streak ?? 0;
+        this.corrects = obj.corrects ?? 0;
+        this.mistakes = obj.mistakes ?? 0;
+        this.rnd = Math.random();
+    }
+    get a () {
+        return this.rnd > 0.5 ? this.x : this.y;
+    }
+    get b () {
+        return this.rnd > 0.5 ? this.y : this.x;
+    }
+    answered (correct) {
+        if (correct) {
+            this.bin = Math.min(++this.bin, 5);
+            this.corrects++;
+            this.streak++;
+        } else {
+            this.bin = 1;
+            this.streak = 0;
+            this.mistakes++;
+        }
+        this.lastSeen = new Date();
+        this.rnd = Math.random();
+        tables.save(currentUser);
+    }
+}
+
+class Tables {
+    constructor () {
+        this.facts = [];
+        [2,3,5,4,10,6,7,8,9,11,12].forEach( a => {
+            for (let b = a; b <= 12; b++ ) {
+                this.facts.push(new Fact({x:a, y:b}))
+            }
+        });
+        this.round = [];
+        this.current = null;
+    }
+    createRound () {
+        
+        this.deck = this.facts.filter(f => f.bin == 1);
+
+        let sorted = []
+        for (let i of [0,1,2,3,4,5]) {
+            sorted.push(this.facts.filter(f => f.bin == i).sort((a, b) => a.lastSeen - b.lastSeen))
+        }
+
+        let binWeights = [  0,0,  2,2,2,2,2,2,2,2,2,2,  3,3,3,3,3,  4,4,  5  ];
+        
+        while (this.deck.length < 21) {
+            
+            let targetBin = binWeights[Math.floor(Math.random() * binWeights.length)];
+            let f = sorted[targetBin].shift();
+           
+            if (!f) continue;
+            if (f.bin == 0) f.bin = 1;
+            this.deck.push(f);
+        }
+
+        this.round = this.deck.sort((a,b) => a.rnd - b.rnd);
+    }
+    next () {
+        this.current = this.round.pop();
+    }
+
+    save (username) {
+        let factExport = JSON.stringify(this.facts.map( f => {
+            let ex = {...f};
+            delete ex.rnd;
+            return ex
+        }));
+        
+        localStorage.setItem(username, factExport);
+
+    }
+    load (username) {
+        this.facts = JSON.parse(localStorage.getItem(username)).map( f => new Fact(f))
+    }
+
 }
 
 class Alien {
@@ -138,7 +226,7 @@ class Missile {
     constructor (alien, x) {
         this.trail = [];
         this.position = {x: x, y: gameHeight - 50 };
-        this.velocity = {x: (Math.random() - 0.5), y: -3 * Math.random() - 1.5};
+        this.velocity = {x: 2 * (Math.random() - 0.5), y: 0 };
         this.trailLength = 20;
         if (alien) {
             this.target = alien;
@@ -147,9 +235,9 @@ class Missile {
         } else {
           this.target = null;
           this.isDud = true;
+          this.velocity.y = -3 * Math.random() - 1.5
           }
         this.hasHitTarget = false;
-        sounds.fire.play();
     }
     update () {
         if (this.hasHitTarget) {
@@ -166,11 +254,10 @@ class Missile {
         this.position.y += this.velocity.y;
         if (!this.isDud) {
             let steer = this.steerVector();
-            let accel = 0.1; 
-            this.velocity.x += steer.x * accel + 2 * (Math.random() - 0.5);
-            this.velocity.y += steer.y * accel + 2 * (Math.random() - 0.5);
+            let accel = 0.2; 
+            this.velocity.x += steer.x * accel;
+            this.velocity.y += steer.y * accel;
         } else {
-            // this.velocity.x -= this.velocity.x * 0.02
             this.velocity.y += 0.02; //gravity
             missiles.filter( m => m.position.y > gameHeight - 50 && !m.hasHitTarget).forEach (m => {
                 m.hasHitTarget = true;
@@ -184,17 +271,15 @@ class Missile {
         }
 
         if (!this.isDud && this.distToTarget() < 5) {
+            sounds.fire.play();
             this.hasHitTarget = true;
             this.target.isDead = true;
-            particles.push(new Particle(this.position, 'red', 0.1),
-                            new Particle(this.position, 'red', 0.1),
-                            new Particle(this.position, 'red', 0.1))
             let liveAliens = wave1.aliens.filter (a => !a.isDead);
             if (liveAliens.length == 0) {
                 if (result == 0) {
                     for (let a of wave1.aliens) {
                         setTimeout(() => {
-                            for (let i = 0; i<50 ; i++) {
+                            for (let i = 0; i<20 ; i++) {
                                 let green = Math.floor(Math.random() * 256);
                                 let red = Math.floor(Math.random() * 128 + 128);
                                 let blue = Math.floor(Math.random() * 128);
@@ -202,7 +287,7 @@ class Missile {
                                 particles.push(new Particle({x: a.x, y: a.y}, `rgba(${red}, ${green}, ${blue}, ${alpha})`, 0))
                             }
                             wave1.aliens = wave1.aliens.filter( b => b !== a);
-                            }, Math.random() * 3000);
+                            }, Math.random() * 300);
                             
                         }
                     } else {
@@ -224,14 +309,14 @@ class Missile {
         let dist = this.distToTarget();
         let dirX = dx / dist;
         let dirY = dy / dist;
-        let desiredSpeed = 6; 
+        let desiredSpeed = 4; 
         let desiredVX = dirX * desiredSpeed;
         let desiredVY = dirY * desiredSpeed;
         return {x: desiredVX - this.velocity.x, y: desiredVY - this.velocity.y};
     }
     draw () {
         gameCtx.fillStyle = 'grey';
-        if (!this.hasHitTarget) gameCtx.fillRect(this.position.x - 4, this.position.y - 4, 8, 8);
+        if (!this.hasHitTarget) gameCtx.fillRect(this.position.x - 3, this.position.y - 3, 6, 6);
         let gradient = gameCtx.createLinearGradient(this.trail[0].x, this.trail[0].y, 
                             this.trail[this.trail.length-1].x, this.trail[this.trail.length-1].y);
         gradient.addColorStop(0, "rgba(255, 128, 0, 1)");   // solid orange
@@ -248,10 +333,12 @@ class Missile {
 }
 
 class Particle {
-	constructor(position, colour, gravity = 0.02) {
+	constructor(position, colour, gravity = 0.02, ) {
 		this.position = {x: position.x, y: position.y};
-		this.vx = Math.random() * 2 - 1;
-		this.vy = Math.random() * 2 - 1;
+        let theta = Math.random() * 2 * Math.PI;
+        let v = Math.random() * 2;
+		this.vx = v * Math.sin(theta);
+		this.vy = v * Math.cos(theta);
 		this.colour = colour;
         this.trail = [];
         this.trailLength = 8;
@@ -265,7 +352,7 @@ class Particle {
 		this.position.x += this.vx;
 		this.position.y += this.vy;
 		this.vy += this.gravity;
-        if (this.gravity < 0.015) this.gravity += 0.00005;
+        if (this.gravity < 0.08) this.gravity += 0.0002;
 
         if (this.position.y > gameHeight) particles = particles.filter (p => p !== this)
 
@@ -297,8 +384,11 @@ function gameLoop(time) {
     switch (gamePhase) {
 
         case 'start':
-             hud = new HUD();
-             sounds.fire = new Sound('sounds/fire.mp3');
+            hud = new HUD();
+            sounds.fire = new Sound('sounds/fire.mp3');
+            tables = new Tables();
+            tables.createRound();
+            if (currentUser) {tables.load(currentUser);}
 
             for (let g = 0; g < 12; g++) {
                 guns.push((gameWidth - 100)/12 * g + 50);
@@ -310,10 +400,14 @@ function gameLoop(time) {
         break;
 
         case 'spawnWave':
-            wave1 = new Wave(tables[Math.floor(Math.random() * tables.length)],Math.floor(Math.random() * 10) + 2);
+            tables.next();
+            if(!tables.current) {
+                gamePhase = 'noMoreTables';
+                break;}
+            wave1 = new Wave(tables.current.a, tables.current.b);
             for (let a of wave1.aliens) {a.draw(); }
             addAnalysisHudElements();
-            missilesMax = 12 * tables[tables.length - 1] + 10;
+            missilesMax = 150;
             gamePhase = 'analysis'; 
             particles.length = 0
             timestamp = time;
@@ -330,6 +424,7 @@ function gameLoop(time) {
             hud.elements.length = 0;
             timestamp = time;
             result = missilestoFire - wave1.aliens.length;
+            tables.current.answered(result == 0)
             gamePhase = 'firing';
             break;
 
@@ -365,7 +460,7 @@ function gameLoop(time) {
             for (let p of particles) {p.update();}
             for (let p of particles) {p.draw();}
             wave1.update(); 
-            if (missilestoFire > 0 && time - timestamp > 50) {
+            if (missilestoFire > 0 && time - timestamp > 20) {
                 timestamp = time;
                 missilestoFire--;
                 let untargetedAliens = wave1.aliens.filter ( a => !a.missile );
@@ -374,15 +469,22 @@ function gameLoop(time) {
             break;
 
             case 'end':
-                hud.draw(time - timestamp);
-                for (let a of wave1.aliens) {a.update(); }
-                for (let a of wave1.aliens) {a.draw(); }
-                for (let m of missiles) {m.update();}
-                for (let m of missiles) {m.draw();}
-                for (let p of particles) {p.update();}
-                for (let p of particles) {p.draw();}
-                wave1.update(); 
-                if (time - timestamp > 5000 && particles.length == 0) {gamePhase = 'spawnWave'}
+
+            hud.draw(time - timestamp);
+            for (let a of wave1.aliens) {a.update(); }
+            for (let a of wave1.aliens) {a.draw(); }
+            for (let m of missiles) {m.update();}
+            for (let m of missiles) {m.draw();}
+            for (let p of particles) {p.update();}
+            for (let p of particles) {p.draw();}
+            wave1.update(); 
+            if (time - timestamp > 5000 && particles.length == 0) {gamePhase = 'spawnWave'}
+            break;
+
+            case 'noMoreTables':
+                
+            break;
+
 
     }
 
@@ -397,7 +499,7 @@ function randInt(lower, higher) {
 
 function addAnalysisHudElements () {
 
-        hud.addElement(1000, Infinity, () => {
+        hud.addElement(300, Infinity, () => {
             if (missilestoFire) hudCtx.fillText(missilestoFire, gameHeight * 0.5, gameHeight - 50);
             hudCtx.strokeRect(50, gameHeight - 30, gameWidth - 250, 10);
             hudCtx.fillRect(50, gameHeight - 30, missilestoFire / missilesMax * (gameWidth - 250), 10 );
@@ -406,7 +508,7 @@ function addAnalysisHudElements () {
         
         });
             // Flashing rect
-         hud.addElement(1500, 3000, (dt) => {
+         hud.addElement(500, 1500, (dt) => {
             if (Math.floor(dt/200) % 2 == 0 ) {
                 hudCtx.strokeRect(
                     wave1.leftmost - 10, 
@@ -424,7 +526,7 @@ function addAnalysisHudElements () {
         });
 
         // Tick marks 
-        hud.addElement(2000, Infinity, (dt) => {
+        hud.addElement(1000, Infinity, (dt) => {
             let colTickNum = Math.min(wave1.cols, Math.floor(dt/100));
             for (let c = 0; c < colTickNum; c++) {
                 hudCtx.beginPath();
@@ -452,7 +554,7 @@ function addAnalysisHudElements () {
                 hudCtx.stroke();
         });
         // Row/col count digits
-        hud.addElement(3500, Infinity, () => {
+        hud.addElement(1500, Infinity, () => {
             hudCtx.textAlign = "center"	;
             hudCtx.font = "20px monospace";
             let middleX = wave1.leftmost + 0.5 * (wave1.rightmost - wave1.leftmost);
