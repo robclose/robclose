@@ -152,7 +152,10 @@ class Tables {
 
     }
     load (username) {
-        this.facts = JSON.parse(localStorage.getItem(username)).map( f => new Fact(f))
+        let json = localStorage.getItem(username);
+        if(json) {
+            this.facts = JSON.parse(json).map( f => new Fact(f))
+        }
     }
 
 }
