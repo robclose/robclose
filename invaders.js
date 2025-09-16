@@ -23,7 +23,7 @@ let result;
 let tables;
 let missilesMax;
 let typedTimeStamp = 0;
-let currentUser = "rob";
+let currentUser = "jess";
 
 class HUD {
     constructor() {
