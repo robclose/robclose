@@ -6,6 +6,9 @@ const hudCtx = document.getElementById('hud-canvas').getContext('2d');
 const gameWidth = document.getElementById('game-canvas').width;
 const gameHeight = document.getElementById('game-canvas').height;
 const canvas = document.getElementById('hud-canvas');
+let sprites = {};
+sprites.alienBoy = document.getElementById('alien-boy');
+sprites.alienGirl = document.getElementById('alien-girl'); 
 const ctxAudio = new AudioContext();
 let missiles = [];
 let guns = [];
@@ -155,11 +158,12 @@ class Tables {
 }
 
 class Alien {
-    constructor (x, y) {
+    constructor (x, y, size) {
         this.x = x;
         this.y = y;
-        this.size = 10;
+        this.size = size;
         this.isDead = false;
+        this.sprite = Math.random() > 0.5 ? "alienBoy" : "alienGirl";
     }
     update () {
         this.x += wave1.vx;
@@ -169,18 +173,21 @@ class Alien {
     draw () {
         if (this.isDead) {
             gameCtx.fillStyle = '#331400';
+            gameCtx.fillRect(this.x - this.size * 0.5, this.y - this.size * 0.5, this.size, this.size);
         }
         else {
             gameCtx.fillStyle = 'red';
+            gameCtx.drawImage(sprites[this.sprite], this.x - this.size * 0.5, this.y - this.size * 0.5, this.size, this.size);
         }
-        gameCtx.fillRect(this.x - this.size * 0.5, this.y - this.size * 0.5, this.size, this.size);
+        
     }
 }
 
 class Wave {
-    constructor(rows, cols) {
+    constructor(rows, cols, spacing) {
         this.rows = rows;
         this.cols = cols;
+        this.spacing = spacing;
         this.vx = 1.0;
         this.nextvx = this.vx;
         this.vy = 0;
@@ -188,7 +195,7 @@ class Wave {
         this.descendCounter = 0;
         for (let i = 0; i < rows; i++) {
             for (let j = 0; j < cols; j++) {
-                this.aliens.push(new Alien(100 + j * 15, 150 + i * 15))
+                this.aliens.push(new Alien(100 + j * this.spacing, 150 + i * this.spacing, this.spacing - 4))
             }
         }
     }
@@ -404,7 +411,7 @@ function gameLoop(time) {
             if(!tables.current) {
                 gamePhase = 'noMoreTables';
                 break;}
-            wave1 = new Wave(tables.current.a, tables.current.b);
+            wave1 = new Wave(tables.current.a, tables.current.b, 22);
             for (let a of wave1.aliens) {a.draw(); }
             addAnalysisHudElements();
             missilesMax = 150;
