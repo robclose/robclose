@@ -411,7 +411,7 @@ function gameLoop(time) {
             if(!tables.current) {
                 gamePhase = 'noMoreTables';
                 break;}
-            wave1 = new Wave(tables.current.a, tables.current.b, 22);
+            wave1 = new Wave(tables.current.a, tables.current.b, 24);
             for (let a of wave1.aliens) {a.draw(); }
             addAnalysisHudElements();
             missilesMax = 150;
