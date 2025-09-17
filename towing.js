@@ -7,9 +7,9 @@ let keys = [];
 
 class Car {
     constructor (colour) {
-        this.frontwheel = {x: 100, y:100};
+        this.frontwheel = {x: 100 + Math.random() * 300, y: 100 + Math.random() * 200};
         this.backwheel = {x:0, y:0};
-        this.steering = 0.7;
+        this.steering = 0;
         this.speed = 0.5;
         this.length = 30;
         this.width = 18;
