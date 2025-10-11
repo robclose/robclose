@@ -25,9 +25,10 @@ class Car {
         ctx.beginPath();
         ctx.moveTo(this.frontAxle.leftHub.x, this.frontAxle.leftHub.y);
         ctx.lineTo(this.frontAxle.rightHub.x, this.frontAxle.rightHub.y);
-        ctx.lineTo(this.rearAxle.rightHub.x, this.rearAxle.rightHub.y);
+        ctx.moveTo(this.rearAxle.rightHub.x, this.rearAxle.rightHub.y);
         ctx.lineTo(this.rearAxle.leftHub.x, this.rearAxle.leftHub.y);
-        ctx.lineTo(this.frontAxle.leftHub.x, this.frontAxle.leftHub.y);
+        ctx.moveTo(this.frontAxle.centre.x, this.frontAxle.centre.y);
+        ctx.lineTo(this.rearAxle.centre.x, this.rearAxle.centre.y);
         ctx.stroke();
         
         // Draw the car wheels
@@ -70,7 +71,7 @@ class Trailer {
     constructor(hitchedTo) {
         this.length = 50;
         this.width = hitchedTo.width;
-        this.colour = hitchedTo.colour;
+        this.colour = 'orange';
         this.hitchedTo = hitchedTo;
         this.axle = new Axle(hitchedTo.hitch.x - this.length, 300, 0, this.width, 0);
         this.hitch = this.axle.centre.addVec(10, 0);
@@ -172,15 +173,13 @@ function gameLoop() {
 
 
 train1.push(new Car('red') );
-train1.push(new Trailer(train1[train1.length - 1]));
-train1.push(new Trailer(train1[train1.length - 1]));
-train1.push(new Trailer(train1[train1.length - 1]));
-train1.push(new Trailer(train1[train1.length - 1]));
-train1.push(new Trailer(train1[train1.length - 1]));
 requestAnimationFrame(gameLoop);
 
 window.addEventListener('keydown', (e) => {
-    if (!keys.includes(e.key)) keys.push(e.key);
+    if (e.key == 'q') {
+        train1.push(new Trailer(train1[train1.length - 1]));
+    }
+    else if (!keys.includes(e.key)) keys.push(e.key);
 });
 
 window.addEventListener('keyup', (e) => {
