@@ -33,14 +33,13 @@ class Car {
         // Draw the car wheels
         ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.moveTo(this.frontAxle.leftWheel[0].x, this.frontAxle.leftWheel[0].y );
-        ctx.lineTo(this.frontAxle.leftWheel[1].x, this.frontAxle.leftWheel[1].y );
-        ctx.moveTo(this.frontAxle.rightWheel[0].x, this.frontAxle.rightWheel[0].y );
-        ctx.lineTo(this.frontAxle.rightWheel[1].x, this.frontAxle.rightWheel[1].y );
-        ctx.moveTo(this.rearAxle.leftWheel[0].x, this.rearAxle.leftWheel[0].y );
-        ctx.lineTo(this.rearAxle.leftWheel[1].x, this.rearAxle.leftWheel[1].y );
-        ctx.moveTo(this.rearAxle.rightWheel[0].x, this.rearAxle.rightWheel[0].y );
-        ctx.lineTo(this.rearAxle.rightWheel[1].x, this.rearAxle.rightWheel[1].y );
+        ['frontAxle', 'rearAxle'].forEach( a => {
+            ['leftWheel', 'rightWheel'].forEach( w => {
+                const wheel = this[a][w];
+                ctx.moveTo(wheel[0].x, wheel[0].y);
+                ctx.lineTo(wheel[1].x, wheel[1].y);
+            });
+        });
         ctx.strokeStyle = "cornflowerblue";
         ctx.stroke();
 
@@ -49,8 +48,7 @@ class Car {
     move () {
         this.frontAxle.centre = this.frontAxle.centre.addVec(this.speed, this.frontAxle.theta + this.frontAxle.steering);
         
-        let t = Math.atan2(this.rearAxle.centre.y - this.frontAxle.centre.y, 
-            this.rearAxle.centre.x - this.frontAxle.centre.x);
+        let t = this.rearAxle.centre.getAngleTo(this.frontAxle.centre);
         this.rearAxle.theta = t;
         this.frontAxle.theta = t;
 
@@ -79,8 +77,7 @@ class Trailer {
     }
     move () {
         
-        let t = Math.atan2(this.axle.centre.y - this.hitchedTo.hitch.y, 
-            this.axle.centre.x - this.hitchedTo.hitch.x);
+        let t = this.axle.centre.getAngleTo(this.hitchedTo.hitch);
         this.axle.theta = t;
 
         this.axle.centre = this.hitchedTo.hitch.addVec(this.length, t + Math.PI);
@@ -121,6 +118,10 @@ class Pos {
     addVec(length, theta) {
         return new Pos(this.x + length * -Math.cos(theta),
                         this.y + length * -Math.sin(theta));
+    }
+    getAngleTo(pos) {
+        return Math.atan2(this.y - pos.y, 
+            this.x - pos.x);
     }
 
 }
