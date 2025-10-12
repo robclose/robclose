@@ -23,12 +23,12 @@ class Car {
          // Draw the car box
         ctx.lineWidth = 3;
         ctx.beginPath();
-        const fl = iso(this.frontAxle.leftHub);
-        const fr = iso(this.frontAxle.rightHub);
-        const rl = iso(this.rearAxle.leftHub);
-        const rr = iso(this.rearAxle.rightHub);
-        const fc = iso(this.frontAxle.centre);
-        const rc = iso(this.rearAxle.centre);
+        const fl = this.frontAxle.leftHub.toIso();
+        const fr = this.frontAxle.rightHub.toIso()
+        const rl = this.rearAxle.leftHub.toIso()
+        const rr = this.rearAxle.rightHub.toIso()
+        const fc = this.frontAxle.centre.toIso()
+        const rc = this.rearAxle.centre.toIso()
 
         ctx.moveTo(fl.x, fl.y);
         ctx.lineTo(fr.x, fr.y);
@@ -38,27 +38,12 @@ class Car {
         ctx.lineTo(rc.x, rc.y);
         ctx.stroke();
         
-        // Draw the car wheels
-        // ctx.lineWidth = 6;
-        // ctx.beginPath();
-        // ['frontAxle', 'rearAxle'].forEach( a => {
-        //     ['leftWheel', 'rightWheel'].forEach( w => {
-        //         const wheel = this[a][w];
-        //         const isoW1 = iso(wheel[0]);
-        //         const isoW2 = iso(wheel[1]);
-        //         ctx.moveTo(isoW1.x, isoW1.y);
-        //         ctx.lineTo(isoW2.x, isoW2.y);
-        //     });
-        // });
         ['frontAxle', 'rearAxle'].forEach( a => {
             ['leftHub', 'rightHub'].forEach( h => {
                 const hub = this[a][h];
-                drawTyre(hub, 10, 10, this[a].theta + this[a].steering + Math.PI * 0.25);
+                drawWheel(hub.x, hub.y, hub.z, 8, this[a].theta + this[a].steering + Math.PI * 0.5, this.colour);
             });
         });
-
-        // ctx.strokeStyle = "cornflowerblue";
-        // ctx.stroke();
 
     }
 
@@ -107,10 +92,10 @@ class Trailer {
 
         // Draw the trailer box
         ctx.lineWidth = 3;
-        const l = iso(this.axle.leftHub);
-        const r = iso(this.axle.rightHub);
-        const c = iso(this.axle.centre);
-        const h = iso(this.hitchedTo.hitch);
+        const l = this.axle.leftHub.toIso()
+        const r = this.axle.rightHub.toIso()
+        const c = this.axle.centre.toIso()
+        const h = this.hitchedTo.hitch.toIso()
 
         ctx.beginPath();
         ctx.moveTo(l.x, l.y);
@@ -119,20 +104,10 @@ class Trailer {
         ctx.lineTo(h.x, h.y);
         ctx.stroke();
 
-        // Draw the car wheels
-        // ctx.lineWidth = 6;
-        // ctx.beginPath();
-        // ctx.moveTo(this.axle.leftWheel[0].x, this.axle.leftWheel[0].y );
-        // ctx.lineTo(this.axle.leftWheel[1].x, this.axle.leftWheel[1].y );
-        // ctx.moveTo(this.axle.rightWheel[0].x, this.axle.rightWheel[0].y );
-        // ctx.lineTo(this.axle.rightWheel[1].x, this.axle.rightWheel[1].y );
-        // ctx.strokeStyle = "cornflowerblue";
-        // ctx.stroke();
-
          ['leftHub', 'rightHub'].forEach( h => {
                 const hub = this.axle[h];
-                drawTyre(hub, 10, 10, this.axle.theta + this.axle.steering + Math.PI * 0.25);
-            });
+                drawWheel(hub.x, hub.y, hub.z, 8, this.axle.theta + Math.PI * 0.5, this.colour);
+                });
 
     }
 }
@@ -150,6 +125,11 @@ class Pos {
     getAngleTo(pos) {
         return Math.atan2(this.y - pos.y, 
             this.x - pos.x);
+    }
+    toIso () {
+        const sx = (this.x - this.y);
+        const sy = (this.x + this.y) * 0.5 - this.z;
+        return { x: sx, y: sy };
     }
 
 }
@@ -178,42 +158,6 @@ class Axle {
 
 }
 
-function iso(pos, scaleX = 1, scaleY = 0.5, scaleZ = 1) {
-  const sx = (pos.x - pos.y) * scaleX;
-  const sy = (pos.x + pos.y) * scaleY - pos.z * scaleZ;
-  return { x: sx, y: sy };
-}
-
-function drawTyre(pos, radius, width, rotation) {
-  // Compute screen position of the tyre center
-  const { x: sx, y: sy } = iso(pos);
-
-  ctx.save();
-  ctx.translate(sx, sy);
-
-  // The tyre faces sideways in isometric space, so we rotate it around Z
-  ctx.rotate(rotation);
-
-  // Apply the isometric horizontal squish (simulate perspective)
-  ctx.scale(1, 0.5);
-
-  // Draw ellipse (wheel face)
-  ctx.beginPath();
-  ctx.ellipse(0, 0, radius, radius, 0, 0, Math.PI * 2);
-  ctx.strokeStyle = "#888";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Optional: inner circle (hub)
-  ctx.beginPath();
-  ctx.ellipse(0, 0, radius * 0.4, radius * 0.4, 0, 0, Math.PI * 2);
-  ctx.strokeStyle = "#444";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  ctx.restore();
-}
-
 function gameLoop() {
 
     ctx.clearRect(0 ,0, gameWidth, gameHeight);
@@ -233,7 +177,6 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-
 train1.push(new Car('red') );
 requestAnimationFrame(gameLoop);
 
@@ -247,3 +190,101 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => {
     keys = keys.filter( (k) => e.key !== k);
 });
+
+// * Genius AI maths stuff below *
+
+// Linear projection of a 3D vector (no translation) -- used to map basis vectors
+function projectVector(vec3) {
+  // vec3: {x,y,z}
+  return {
+    x: (vec3.x - vec3.y) * 1,
+    y: (vec3.x + vec3.y) * 0.5 - vec3.z * 1
+  };
+}
+
+// normalize helper
+function normalize(v) {
+  const L = Math.hypot(v.x, v.y, v.z);
+  return { x: v.x / L, y: v.y / L, z: v.z / L };
+}
+
+// Main: draw a wheel as properly projected ellipse
+// center (cx,cy,cz) in world space, radius r, heading 'heading' (radians)
+function drawWheel(cx, cy, cz, r, headingRad, colour='#aaa') {
+  // forward vector in world XY plane
+  const f = { x: Math.cos(headingRad), y: Math.sin(headingRad), z: 0 };
+
+  // choose two orthonormal basis vectors spanning wheel plane:
+  // we want the wheel plane to be perpendicular to forward 'f' and include vertical axis.
+  // Let v = world up (0,0,1)
+  const vUp = { x: 0, y: 0, z: 1 };
+
+  // u = normalized( f cross vUp )  -- this runs across the wheel (left-right)
+  // cross(f, vUp) = (f.y*1 - 0, 0 - f.x*1, f.x*0 - f.y*0) = (f.y, -f.x, 0)
+  let u = { x: f.y, y: -f.x, z: 0 };
+  // ensure normalized (it will be length 1 if f is unit)
+  u = normalize(u);
+  // v vector in plane: vertical axis mapped into wheel plane: use vUp (0,0,1)
+  const v = vUp; // already normalized
+
+  // project u and v into screen space (linear)
+  const pu = projectVector(u); // {x,y}
+  const pv = projectVector(v); // {x,y}
+
+  // Matrix A = [ pu pv ]  where A maps [cos t; sin t] -> screen (without center)
+  // Compute symmetric matrix M = A * A^T = pu*pu^T + pv*pv^T
+  const m00 = pu.x * pu.x + pv.x * pv.x;
+  const m01 = pu.x * pu.y + pv.x * pv.y;
+  const m11 = pu.y * pu.y + pv.y * pv.y;
+
+  // eigenvalues of 2x2 symmetric matrix:
+  const trace = m00 + m11;
+  const det = m00 * m11 - m01 * m01;
+  const disc = Math.max(0, trace * trace - 4 * det);
+  const sqrtDisc = Math.sqrt(disc);
+  const lambda1 = (trace + sqrtDisc) / 2;
+  const lambda2 = (trace - sqrtDisc) / 2;
+
+  // singular values = sqrt(eigenvalues), multiplied by radius
+  const s1 = r * Math.sqrt(lambda1);
+  const s2 = r * Math.sqrt(Math.max(0, lambda2)); // numerical safety
+
+  // eigenvector for lambda1 (major axis direction)
+  let ax = 1, ay = 0; // fallback
+  if (Math.abs(m01) > 1e-6 || Math.abs(lambda1 - m00) > 1e-6) {
+    ax = m01;
+    ay = lambda1 - m00;
+    // if that is near-zero, try alternate form
+    if (Math.abs(ax) < 1e-8 && Math.abs(ay) < 1e-8) {
+      ax = lambda1 - m11;
+      ay = m01;
+    }
+  } else {
+    // special case: matrix is diagonal
+    ax = 1;
+    ay = 0;
+  }
+  // normalize axis
+  const aLen = Math.hypot(ax, ay) || 1;
+  ax /= aLen;
+  ay /= aLen;
+
+  // angle for canvas ellipse
+  const angle = Math.atan2(ay, ax);
+
+  // screen center
+  const center = new Pos(cx, cy, cz).toIso();
+
+  // draw filled ellipse & outline
+  ctx.save();
+  ctx.translate(center.x, center.y);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, s1, s2, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#555';
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = colour;
+  ctx.stroke();
+  ctx.restore();
+}
