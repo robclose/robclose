@@ -23,26 +23,42 @@ class Car {
          // Draw the car box
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(this.frontAxle.leftHub.x, this.frontAxle.leftHub.y);
-        ctx.lineTo(this.frontAxle.rightHub.x, this.frontAxle.rightHub.y);
-        ctx.moveTo(this.rearAxle.rightHub.x, this.rearAxle.rightHub.y);
-        ctx.lineTo(this.rearAxle.leftHub.x, this.rearAxle.leftHub.y);
-        ctx.moveTo(this.frontAxle.centre.x, this.frontAxle.centre.y);
-        ctx.lineTo(this.rearAxle.centre.x, this.rearAxle.centre.y);
+        const fl = iso(this.frontAxle.leftHub);
+        const fr = iso(this.frontAxle.rightHub);
+        const rl = iso(this.rearAxle.leftHub);
+        const rr = iso(this.rearAxle.rightHub);
+        const fc = iso(this.frontAxle.centre);
+        const rc = iso(this.rearAxle.centre);
+
+        ctx.moveTo(fl.x, fl.y);
+        ctx.lineTo(fr.x, fr.y);
+        ctx.moveTo(rl.x, rl.y);
+        ctx.lineTo(rr.x, rr.y);
+        ctx.moveTo(fc.x, fc.y);
+        ctx.lineTo(rc.x, rc.y);
         ctx.stroke();
         
         // Draw the car wheels
-        ctx.lineWidth = 6;
-        ctx.beginPath();
+        // ctx.lineWidth = 6;
+        // ctx.beginPath();
+        // ['frontAxle', 'rearAxle'].forEach( a => {
+        //     ['leftWheel', 'rightWheel'].forEach( w => {
+        //         const wheel = this[a][w];
+        //         const isoW1 = iso(wheel[0]);
+        //         const isoW2 = iso(wheel[1]);
+        //         ctx.moveTo(isoW1.x, isoW1.y);
+        //         ctx.lineTo(isoW2.x, isoW2.y);
+        //     });
+        // });
         ['frontAxle', 'rearAxle'].forEach( a => {
-            ['leftWheel', 'rightWheel'].forEach( w => {
-                const wheel = this[a][w];
-                ctx.moveTo(wheel[0].x, wheel[0].y);
-                ctx.lineTo(wheel[1].x, wheel[1].y);
+            ['leftHub', 'rightHub'].forEach( h => {
+                const hub = this[a][h];
+                drawTyre(hub, 10, 10, this[a].theta + this[a].steering + Math.PI * 0.25);
             });
         });
-        ctx.strokeStyle = "cornflowerblue";
-        ctx.stroke();
+
+        // ctx.strokeStyle = "cornflowerblue";
+        // ctx.stroke();
 
     }
 
@@ -91,30 +107,41 @@ class Trailer {
 
         // Draw the trailer box
         ctx.lineWidth = 3;
+        const l = iso(this.axle.leftHub);
+        const r = iso(this.axle.rightHub);
+        const c = iso(this.axle.centre);
+        const h = iso(this.hitchedTo.hitch);
+
         ctx.beginPath();
-        ctx.moveTo(this.axle.leftHub.x, this.axle.leftHub.y);
-        ctx.lineTo(this.axle.rightHub.x, this.axle.rightHub.y);
-        ctx.moveTo(this.axle.centre.x, this.axle.centre.y);
-        ctx.lineTo(this.hitchedTo.hitch.x, this.hitchedTo.hitch.y);
+        ctx.moveTo(l.x, l.y);
+        ctx.lineTo(r.x, r.y);
+        ctx.moveTo(c.x, c.y);
+        ctx.lineTo(h.x, h.y);
         ctx.stroke();
 
         // Draw the car wheels
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(this.axle.leftWheel[0].x, this.axle.leftWheel[0].y );
-        ctx.lineTo(this.axle.leftWheel[1].x, this.axle.leftWheel[1].y );
-        ctx.moveTo(this.axle.rightWheel[0].x, this.axle.rightWheel[0].y );
-        ctx.lineTo(this.axle.rightWheel[1].x, this.axle.rightWheel[1].y );
-        ctx.strokeStyle = "cornflowerblue";
-        ctx.stroke();
+        // ctx.lineWidth = 6;
+        // ctx.beginPath();
+        // ctx.moveTo(this.axle.leftWheel[0].x, this.axle.leftWheel[0].y );
+        // ctx.lineTo(this.axle.leftWheel[1].x, this.axle.leftWheel[1].y );
+        // ctx.moveTo(this.axle.rightWheel[0].x, this.axle.rightWheel[0].y );
+        // ctx.lineTo(this.axle.rightWheel[1].x, this.axle.rightWheel[1].y );
+        // ctx.strokeStyle = "cornflowerblue";
+        // ctx.stroke();
+
+         ['leftHub', 'rightHub'].forEach( h => {
+                const hub = this.axle[h];
+                drawTyre(hub, 10, 10, this.axle.theta + this.axle.steering + Math.PI * 0.25);
+            });
 
     }
 }
 
 class Pos {
-    constructor (x, y) {
+    constructor (x, y, z = 0) {
         this.x = x;
         this.y = y;
+        this.z = z;
     }
     addVec(length, theta) {
         return new Pos(this.x + length * -Math.cos(theta),
@@ -151,6 +178,41 @@ class Axle {
 
 }
 
+function iso(pos, scaleX = 1, scaleY = 0.5, scaleZ = 1) {
+  const sx = (pos.x - pos.y) * scaleX;
+  const sy = (pos.x + pos.y) * scaleY - pos.z * scaleZ;
+  return { x: sx, y: sy };
+}
+
+function drawTyre(pos, radius, width, rotation) {
+  // Compute screen position of the tyre center
+  const { x: sx, y: sy } = iso(pos);
+
+  ctx.save();
+  ctx.translate(sx, sy);
+
+  // The tyre faces sideways in isometric space, so we rotate it around Z
+  ctx.rotate(rotation);
+
+  // Apply the isometric horizontal squish (simulate perspective)
+  ctx.scale(1, 0.5);
+
+  // Draw ellipse (wheel face)
+  ctx.beginPath();
+  ctx.ellipse(0, 0, radius, radius, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = "#888";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Optional: inner circle (hub)
+  ctx.beginPath();
+  ctx.ellipse(0, 0, radius * 0.4, radius * 0.4, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = "#444";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.restore();
+}
 
 function gameLoop() {
 
