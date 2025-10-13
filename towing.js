@@ -10,20 +10,36 @@ let terrain = {arr: [
     [0,0,0,0,0,0,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0],
     [0,0,1,1,1,1,1,0,0,0],
-    [0,0,1,2,2,2,1,0,0,0],
-    [0,0,1,2,3,2,1,0,0,0],
-    [0,0,1,2,2,2,1,0,0,0],
-    [0,0,1,1,1,1,1,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
+    [0,0,1,2,2,1,1,0,0,0],
+    [0,0,1,2,2,1,1,0,0,0],
+    [0,0,1,2,2,1,1,0,0,0],
+    [0,0,1,2,2,1,1,0,0,0],
+    [0,0,1,2,2,1,0,0,0,0],
+    [0,0,1,2,2,1,0,0,0,0],
     [0,0,0,0,0,0,0,0,0,0],
 ],
 z: function (x, y) {
-    let modX = x % 10;
-    let modY = y % 10;
-    if (modX < 0) modX += 10;
-    if (modY < 0) modY += 10;
-    return 20 * this.arr[modY][modX];
+    let grid = [Math.floor(x/gridSize), Math.ceil(x/gridSize),
+                Math.floor(y/gridSize), Math.ceil(y/gridSize)];
+    let mod = grid.map ( g => {
+        let m = g % 10;
+        if (m < 0) m += 10;
+        return m;
+    });
+    let heights = []
+    heights[0] = this.arr[mod[0]][mod[2]]; 
+    heights[1] = this.arr[mod[1]][mod[2]]; 
+    heights[2] = this.arr[mod[0]][mod[3]]; 
+    heights[3] = this.arr[mod[1]][mod[3]];
+
+    const tx = x / gridSize - grid[0];
+    const ty = y / gridSize - grid[2];
+
+    const a = heights[0] * (1 - tx) + heights[1] * tx;
+    const b = heights[2] * (1 - tx) + heights[3] * tx;
+
+    return 20 *( a * (1 - ty) + b * ty);
+
 }
 }
 
@@ -49,10 +65,10 @@ const map = {
                 (i+j) % 2 == 0 ? ctx.fillStyle = '#55555555' : ctx.fillStyle = '#555555BB' ;
                 ctx.beginPath();
 
-                new Pos(i * gridSize, j * gridSize, terrain.z(i, j)).moveToIso();
-                new Pos((i + 1) * gridSize, j * gridSize, terrain.z(i + 1, j) ).lineToIso();
-                new Pos((i+1) * gridSize, (j+1) * gridSize, terrain.z(i + 1, j + 1)).lineToIso();
-                new Pos(i * gridSize, (j + 1) * gridSize, terrain.z(i, j + 1)).lineToIso();
+                new Pos(i * gridSize, j * gridSize, terrain.z(i * gridSize, j * gridSize)).moveToIso();
+                new Pos((i + 1) * gridSize, j * gridSize, terrain.z((i + 1) * gridSize, j * gridSize) ).lineToIso();
+                new Pos((i+1) * gridSize, (j+1) * gridSize, terrain.z((i + 1) * gridSize, (j + 1) * gridSize)).lineToIso();
+                new Pos(i * gridSize, (j + 1) * gridSize, terrain.z(i * gridSize, (j + 1) * gridSize)).lineToIso();
                 ctx.closePath();
                 ctx.fill();
             }
@@ -219,9 +235,7 @@ class Axle {
                 this.rightHub.addVec(-8, this.theta + this.steering)];
     }
     ground () {
-        let gridX = Math.floor(this.centre.x / gridSize);
-        let gridY = Math.floor(this.centre.y / gridSize);
-        this.centre.z = terrain.z(gridX, gridY);
+        this.centre.z = terrain.z(this.centre.x, this.centre.y);
     }
 
 }
