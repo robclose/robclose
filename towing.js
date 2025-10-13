@@ -10,18 +10,18 @@ const map = {
     draw: function () {
         ctx.strokeStyle = '#55555555';
         ctx.beginPath();
-        for (let i = 0; i <= 500 ; i += 50) {
+        for (let i = 0 ; i <= 500 ; i += 50) {
             new Pos(i,0).moveToIso();
             new Pos(i,500).lineToIso();
         }
         for (let j = 0; j <= 500 ; j += 50) {
-            new Pos(0,j).moveToIso();
-            new Pos(500,j).lineToIso();
+            new Pos(0 ,j).moveToIso();
+            new Pos(500 ,j).lineToIso();
         }
       
         ctx.stroke();
-    }
-
+    },
+    follow: null
 }
 
 class Car {
@@ -41,19 +41,13 @@ class Car {
          // Draw the car box
         ctx.lineWidth = 3;
         ctx.beginPath();
-        const fl = this.frontAxle.leftHub.toIso();
-        const fr = this.frontAxle.rightHub.toIso()
-        const rl = this.rearAxle.leftHub.toIso()
-        const rr = this.rearAxle.rightHub.toIso()
-        const fc = this.frontAxle.centre.toIso()
-        const rc = this.rearAxle.centre.toIso()
+        this.frontAxle.leftHub.moveToIso();
+        this.frontAxle.rightHub.lineToIso();
+        this.rearAxle.leftHub.moveToIso();
+        this.rearAxle.rightHub.lineToIso();
+        this.frontAxle.centre.moveToIso();
+        this.rearAxle.centre.lineToIso();
 
-        ctx.moveTo(fl.x, fl.y);
-        ctx.lineTo(fr.x, fr.y);
-        ctx.moveTo(rl.x, rl.y);
-        ctx.lineTo(rr.x, rr.y);
-        ctx.moveTo(fc.x, fc.y);
-        ctx.lineTo(rc.x, rc.y);
         ctx.stroke();
         
         ['frontAxle', 'rearAxle'].forEach( a => {
@@ -76,6 +70,7 @@ class Car {
         this.hitch = this.rearAxle.centre.addVec(10, t + Math.PI);
         
         this.frontAxle.steering *= 0.93;
+        
     }
 
     steerLeft() {
@@ -110,16 +105,11 @@ class Trailer {
 
         // Draw the trailer box
         ctx.lineWidth = 3;
-        const l = this.axle.leftHub.toIso()
-        const r = this.axle.rightHub.toIso()
-        const c = this.axle.centre.toIso()
-        const h = this.hitchedTo.hitch.toIso()
-
         ctx.beginPath();
-        ctx.moveTo(l.x, l.y);
-        ctx.lineTo(r.x, r.y);
-        ctx.moveTo(c.x, c.y);
-        ctx.lineTo(h.x, h.y);
+        this.axle.leftHub.moveToIso()
+        this.axle.rightHub.lineToIso()
+        this.axle.centre.moveToIso()
+        this.hitchedTo.hitch.lineToIso()
         ctx.stroke();
 
          ['leftHub', 'rightHub'].forEach( h => {
@@ -145,8 +135,10 @@ class Pos {
             this.x - pos.x);
     }
     toIso () {
-        const sx = (this.x - this.y);
-        const sy = (this.x + this.y) * 0.5 - this.z;
+        const x = this.x - map.follow.x + 250;
+        const y = this.y - map.follow.y + 250;
+        const sx = (x - y);
+        const sy = (x + y) * 0.5 - this.z;
         return { x: sx + 500, y: sy + 100 };
     }
     moveToIso () {
@@ -189,6 +181,9 @@ function gameLoop() {
     ctx.clearRect(0 ,0, gameWidth, gameHeight);
     map.draw();
     train1.forEach( v => v.move());
+
+    map.follow = train1[0].frontAxle.centre;
+    
     train1.forEach( v => v.draw());
 
     if (keys.includes('a')) { train1[0].steerLeft(); }
@@ -205,6 +200,8 @@ function gameLoop() {
 }
 
 train1.push(new Car('red') );
+
+map.follow = train1[0].frontAxle.centre;
 requestAnimationFrame(gameLoop);
 
 window.addEventListener('keydown', (e) => {
