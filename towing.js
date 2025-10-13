@@ -3,23 +3,62 @@
 const ctx = document.getElementById('canvas').getContext('2d');
 const gameWidth = document.getElementById('canvas').width;
 const gameHeight = document.getElementById('canvas').height;
+const gridSize = 50;
 let keys = [];
 let train1 = [];
+let terrain = {arr: [
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,0,1,1,1,1,1,0,0,0],
+    [0,0,1,2,2,2,1,0,0,0],
+    [0,0,1,2,3,2,1,0,0,0],
+    [0,0,1,2,2,2,1,0,0,0],
+    [0,0,1,1,1,1,1,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0],
+],
+z: function (x, y) {
+    let modX = x % 10;
+    let modY = y % 10;
+    if (modX < 0) modX += 10;
+    if (modY < 0) modY += 10;
+    return 20 * this.arr[modY][modX];
+}
+}
 
 const map = {
     draw: function () {
-        ctx.strokeStyle = '#55555555';
-        ctx.beginPath();
-        for (let i = 0 ; i <= 500 ; i += 50) {
-            new Pos(i,0).moveToIso();
-            new Pos(i,500).lineToIso();
-        }
-        for (let j = 0; j <= 500 ; j += 50) {
-            new Pos(0 ,j).moveToIso();
-            new Pos(500 ,j).lineToIso();
+        const gridStartX = (Math.floor(map.follow.coords.x / gridSize) - 12);
+        const gridEndX = (Math.floor(map.follow.coords.x / gridSize) + 12);
+        const gridStartY = (Math.floor(map.follow.coords.y / gridSize) - 12);
+        const gridEndY = (Math.floor(map.follow.coords.y / gridSize) + 12);
+        //ctx.strokeStyle = '#55555555';
+        //ctx.beginPath();
+        // for (let i = gridStartX ; i <= gridEndX ; i += 50) {
+        //     new Pos(i,gridStartY).moveToIso();
+        //     new Pos(i,gridEndY).lineToIso();
+        // }
+        // for (let j = gridStartY; j <= gridEndY ; j += 50) {
+        //     new Pos(gridStartX ,j).moveToIso();
+        //     new Pos(gridEndX ,j).lineToIso();
+        // }
+
+        for (let i = gridStartX ; i <= gridEndX ; i++) {
+            for (let j = gridStartY; j <= gridEndY ; j++) {
+                (i+j) % 2 == 0 ? ctx.fillStyle = '#55555555' : ctx.fillStyle = '#555555BB' ;
+                ctx.beginPath();
+
+                new Pos(i * gridSize, j * gridSize, terrain.z(i, j)).moveToIso();
+                new Pos((i + 1) * gridSize, j * gridSize, terrain.z(i + 1, j) ).lineToIso();
+                new Pos((i+1) * gridSize, (j+1) * gridSize, terrain.z(i + 1, j + 1)).lineToIso();
+                new Pos(i * gridSize, (j + 1) * gridSize, terrain.z(i, j + 1)).lineToIso();
+                ctx.closePath();
+                ctx.fill();
+            }
         }
       
-        ctx.stroke();
+        //ctx.stroke();
     },
     follow: null
 }
@@ -34,6 +73,9 @@ class Car {
         this.frontAxle = new Axle(300, 300, 0, this.width, 0);
         this.rearAxle = new Axle(300 - this.length, 300, 0, this.width, 0);
         this.hitch = this.rearAxle.centre.addVec(10, 0);
+    }
+    get coords () {
+        return this.frontAxle.centre;
     }
     draw () {
         ctx.strokeStyle = this.colour;
@@ -61,12 +103,13 @@ class Car {
 
     move () {
         this.frontAxle.centre = this.frontAxle.centre.addVec(this.speed, this.frontAxle.theta + this.frontAxle.steering);
-        
+        this.frontAxle.ground();
         let t = this.rearAxle.centre.getAngleTo(this.frontAxle.centre);
         this.rearAxle.theta = t;
         this.frontAxle.theta = t;
 
         this.rearAxle.centre = this.frontAxle.centre.addVec(this.length, t + Math.PI);
+        this.rearAxle.ground();
         this.hitch = this.rearAxle.centre.addVec(10, t + Math.PI);
         
         this.frontAxle.steering *= 0.93;
@@ -96,6 +139,7 @@ class Trailer {
         this.axle.theta = t;
 
         this.axle.centre = this.hitchedTo.hitch.addVec(this.length, t + Math.PI);
+        this.axle.ground();
         this.hitch = this.axle.centre.addVec(10, t + Math.PI);
         
         }
@@ -128,15 +172,16 @@ class Pos {
     }
     addVec(length, theta) {
         return new Pos(this.x + length * -Math.cos(theta),
-                        this.y + length * -Math.sin(theta));
+                        this.y + length * -Math.sin(theta),
+                        this.z);
     }
     getAngleTo(pos) {
         return Math.atan2(this.y - pos.y, 
             this.x - pos.x);
     }
     toIso () {
-        const x = this.x - map.follow.x + 250;
-        const y = this.y - map.follow.y + 250;
+        const x = this.x - map.follow.coords.x + 250;
+        const y = this.y - map.follow.coords.y + 250;
         const sx = (x - y);
         const sy = (x + y) * 0.5 - this.z;
         return { x: sx + 500, y: sy + 100 };
@@ -173,6 +218,11 @@ class Axle {
         return [this.rightHub.addVec(8, this.theta + this.steering),
                 this.rightHub.addVec(-8, this.theta + this.steering)];
     }
+    ground () {
+        let gridX = Math.floor(this.centre.x / gridSize);
+        let gridY = Math.floor(this.centre.y / gridSize);
+        this.centre.z = terrain.z(gridX, gridY);
+    }
 
 }
 
@@ -181,9 +231,6 @@ function gameLoop() {
     ctx.clearRect(0 ,0, gameWidth, gameHeight);
     map.draw();
     train1.forEach( v => v.move());
-
-    map.follow = train1[0].frontAxle.centre;
-    
     train1.forEach( v => v.draw());
 
     if (keys.includes('a')) { train1[0].steerLeft(); }
@@ -201,7 +248,7 @@ function gameLoop() {
 
 train1.push(new Car('red') );
 
-map.follow = train1[0].frontAxle.centre;
+map.follow = train1[0];
 requestAnimationFrame(gameLoop);
 
 window.addEventListener('keydown', (e) => {
