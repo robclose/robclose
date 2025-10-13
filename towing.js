@@ -6,6 +6,24 @@ const gameHeight = document.getElementById('canvas').height;
 let keys = [];
 let train1 = [];
 
+const map = {
+    draw: function () {
+        ctx.strokeStyle = '#55555555';
+        ctx.beginPath();
+        for (let i = 0; i <= 500 ; i += 50) {
+            new Pos(i,0).moveToIso();
+            new Pos(i,500).lineToIso();
+        }
+        for (let j = 0; j <= 500 ; j += 50) {
+            new Pos(0,j).moveToIso();
+            new Pos(500,j).lineToIso();
+        }
+      
+        ctx.stroke();
+    }
+
+}
+
 class Car {
     constructor (colour) {
         this.speed = 0.5;
@@ -129,7 +147,15 @@ class Pos {
     toIso () {
         const sx = (this.x - this.y);
         const sy = (this.x + this.y) * 0.5 - this.z;
-        return { x: sx, y: sy };
+        return { x: sx + 500, y: sy + 100 };
+    }
+    moveToIso () {
+        const isoPos = this.toIso();
+        ctx.moveTo(isoPos.x, isoPos.y);
+    }
+    lineToIso () {
+        const isoPos = this.toIso();
+        ctx.lineTo(isoPos.x, isoPos.y);
     }
 
 }
@@ -161,6 +187,7 @@ class Axle {
 function gameLoop() {
 
     ctx.clearRect(0 ,0, gameWidth, gameHeight);
+    map.draw();
     train1.forEach( v => v.move());
     train1.forEach( v => v.draw());
 
