@@ -6,76 +6,66 @@ const gameHeight = document.getElementById('canvas').height;
 const gridSize = 30;
 let keys = [];
 let train1 = [];
-let terrain = {arr: [],
-    // [0,0,1,2,2,1,0,0,0,0],
-    // [0,0,1,1,1,1,0,0,0,0],
-    // [0,0,1,2,3,3,2,1,0,0],
-    // [0,0,1,2,4,4,2,1,0,0],
-    // [0,0,1,2,4,4,2,0,0,0],
-    // [0,1,2,3,4,5,3,2,1,0],
-    // [0,0,1,2,2,3,2,1,0,0],
-    // [0,0,1,2,2,1,0,0,0,0],
-    // [0,0,1,2,2,1,0,0,0,0],
-    // [0,0,1,2,2,1,0,0,0,0],
-z: function (x, y) {
-    let grid = [Math.floor(x/gridSize), Math.ceil(x/gridSize),
-                Math.floor(y/gridSize), Math.ceil(y/gridSize)];
-    let mod = grid.map ( g => {
-        let m = g % this.arr[0].length;
-        if (m < 0) m += this.arr[0].length;
-        return m;
-    });
-    let heights = []
-    heights[0] = this.arr[mod[0]][mod[2]]; 
-    heights[1] = this.arr[mod[1]][mod[2]]; 
-    heights[2] = this.arr[mod[0]][mod[3]]; 
-    heights[3] = this.arr[mod[1]][mod[3]];
+let terrain = {
+    arr: [],
+    z: function (x, y) {
+        let grid = [Math.floor(x/gridSize), Math.ceil(x/gridSize),
+                    Math.floor(y/gridSize), Math.ceil(y/gridSize)];
+        let mod = grid.map ( g => {
+            let m = g % this.arr[0].length;
+            if (m < 0) m += this.arr[0].length;
+            return m;
+        });
+        let heights = []
+        heights[0] = this.arr[mod[0]][mod[2]]; 
+        heights[1] = this.arr[mod[1]][mod[2]]; 
+        heights[2] = this.arr[mod[0]][mod[3]]; 
+        heights[3] = this.arr[mod[1]][mod[3]];
 
-    const tx = x / gridSize - grid[0];
-    const ty = y / gridSize - grid[2];
+        const tx = x / gridSize - grid[0];
+        const ty = y / gridSize - grid[2];
 
-    const a = heights[0] * (1 - tx) + heights[1] * tx;
-    const b = heights[2] * (1 - tx) + heights[3] * tx;
+        const a = heights[0] * (1 - tx) + heights[1] * tx;
+        const b = heights[2] * (1 - tx) + heights[3] * tx;
 
-    return 10 *( a * (1 - ty) + b * ty);
+        return 10 *( a * (1 - ty) + b * ty);
 
-},
-gen: function (w, h, numHills) {
-  const map = Array.from({ length: h }, () => Array(w).fill(0));
+    },
+    gen: function (w, h, numHills) {
+    const map = Array.from({ length: h }, () => Array(w).fill(0));
 
-  for (let i = 0; i < numHills; i++) {
-    const cx = Math.random() * w;
-    const cy = Math.random() * h;
-    const r = Math.random() * 8 + 4;
-    const hgt = Math.random() * 12 - 5;  // can be hill or valley
+    for (let i = 0; i < numHills; i++) {
+        const cx = Math.random() * w;
+        const cy = Math.random() * h;
+        const r = Math.random() * 8 + 4;
+        const hgt = Math.random() * 12 - 5;  // can be hill or valley
 
-    // apply to all nearby grid cells, wrapping around edges
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        let dx = Math.abs(x - cx);
-        let dy = Math.abs(y - cy);
-        if (dx > w / 2) dx = w - dx;
-        if (dy > h / 2) dy = h - dy;
+        // apply to all nearby grid cells, wrapping around edges
+        for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            let dx = Math.abs(x - cx);
+            let dy = Math.abs(y - cy);
+            if (dx > w / 2) dx = w - dx;
+            if (dy > h / 2) dy = h - dy;
 
-        const d = Math.sqrt(dx*dx + dy*dy);
-        if (d < r) {
-          map[y][x] += hgt * (1 - d / r);
+            const d = Math.sqrt(dx*dx + dy*dy);
+            if (d < r) {
+            map[y][x] += hgt * (1 - d / r);
+            }
         }
-      }
     }
   }
-
-  this.arr = map;
+    this.arr = map;
 }
 }
 
 const map = {
     draw: function () {
         // Calculate the range of the grid visible on screen
-        const gridStartX = (Math.floor(map.follow.coords.x / gridSize) - 600/gridSize);
-        const gridEndX = (Math.floor(map.follow.coords.x / gridSize) + 600/gridSize);
-        const gridStartY = (Math.floor(map.follow.coords.y / gridSize) - 600/gridSize);
-        const gridEndY = (Math.floor(map.follow.coords.y / gridSize) + 600/gridSize);
+        const gridStartX = (Math.floor(map.follow.coords.x / gridSize) - 660/gridSize);
+        const gridEndX = (Math.floor(map.follow.coords.x / gridSize) + 660/gridSize);
+        const gridStartY = (Math.floor(map.follow.coords.y / gridSize) - 660/gridSize);
+        const gridEndY = (Math.floor(map.follow.coords.y / gridSize) + 660/gridSize);
 
         for (let i = gridStartX ; i <= gridEndX ; i++) {
             for (let j = gridStartY; j <= gridEndY ; j++) {
@@ -131,7 +121,6 @@ class Car {
         this.rearAxle.centre.addVec3(15, t, t2 - Math.PI * 0.5).lineToIso();
         this.rearAxle.leftHub.addVec3(15, t, t2 - Math.PI * 0.5).moveToIso();
         this.rearAxle.rightHub.addVec3(15, t, t2 - Math.PI * 0.5).lineToIso();
-
 
         ctx.stroke();
         
@@ -370,14 +359,12 @@ window.addEventListener('keyup', (e) => {
 
 // Linear projection of a 3D vector (no translation) -- used to map basis vectors
 function projectVector(vec3) {
-  // vec3: {x,y,z}
   return {
     x: (vec3.x - vec3.y) * 1,
     y: (vec3.x + vec3.y) * 0.5 - vec3.z * 1
   };
 }
 
-// normalize helper
 function normalize(v) {
   const L = Math.hypot(v.x, v.y, v.z);
   return { x: v.x / L, y: v.y / L, z: v.z / L };
