@@ -40,19 +40,18 @@ z: function (x, y) {
     return 10 *( a * (1 - ty) + b * ty);
 
 },
-gen: function (w, h, numHills = 5) {
+gen: function (w, h, numHills) {
   const map = Array.from({ length: h }, () => Array(w).fill(0));
 
   for (let i = 0; i < numHills; i++) {
     const cx = Math.random() * w;
     const cy = Math.random() * h;
-    const r = Math.random() * 8 + 4;      // radius
-    const hgt = Math.random() * 20 - 10;  // can be hill or valley
+    const r = Math.random() * 8 + 4;
+    const hgt = Math.random() * 12 - 5;  // can be hill or valley
 
     // apply to all nearby grid cells, wrapping around edges
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        // shortest toroidal distance in x/y
         let dx = Math.abs(x - cx);
         let dy = Math.abs(y - cy);
         if (dx > w / 2) dx = w - dx;
@@ -72,6 +71,7 @@ gen: function (w, h, numHills = 5) {
 
 const map = {
     draw: function () {
+        // Calculate the range of the grid visible on screen
         const gridStartX = (Math.floor(map.follow.coords.x / gridSize) - 600/gridSize);
         const gridEndX = (Math.floor(map.follow.coords.x / gridSize) + 600/gridSize);
         const gridStartY = (Math.floor(map.follow.coords.y / gridSize) - 600/gridSize);
@@ -79,13 +79,17 @@ const map = {
 
         for (let i = gridStartX ; i <= gridEndX ; i++) {
             for (let j = gridStartY; j <= gridEndY ; j++) {
-                (i+j) % 2 == 0 ? ctx.fillStyle = '#55555555' : ctx.fillStyle = '#555555BB' ;
+                (i+j) % 2 == 0 ? ctx.fillStyle = '#55555555' : ctx.fillStyle = '#555555bb' ;
                 ctx.beginPath();
-
-                new Pos(i * gridSize, j * gridSize, terrain.z(i * gridSize, j * gridSize)).moveToIso();
-                new Pos((i + 1) * gridSize, j * gridSize, terrain.z((i + 1) * gridSize, j * gridSize) ).lineToIso();
-                new Pos((i+1) * gridSize, (j+1) * gridSize, terrain.z((i + 1) * gridSize, (j + 1) * gridSize)).lineToIso();
-                new Pos(i * gridSize, (j + 1) * gridSize, terrain.z(i * gridSize, (j + 1) * gridSize)).lineToIso();
+                const x0 = i * gridSize;
+                const x1 = (i + 1) * gridSize;
+                const y0 = j * gridSize;
+                const y1 = (j + 1) * gridSize;
+                // Draw a 4 sided shape for each grid square
+                new Pos(x0, y0, terrain.z(x0, y0)).moveToIso();
+                new Pos(x1, y0, terrain.z(x1, y0)).lineToIso();
+                new Pos(x1, y1, terrain.z(x1, y1)).lineToIso();
+                new Pos(x0, y1, terrain.z(x0, y1)).lineToIso();
                 ctx.closePath();
                 ctx.fill();
             }
@@ -109,6 +113,10 @@ class Car {
         return this.frontAxle.centre;
     }
     draw () {
+        
+        const t = this.rearAxle.theta;
+        const t2 = this.rearAxle.theta2;
+        
         ctx.strokeStyle = this.colour;
 
          // Draw the car box
@@ -120,6 +128,10 @@ class Car {
         this.rearAxle.rightHub.lineToIso();
         this.frontAxle.centre.moveToIso();
         this.rearAxle.centre.lineToIso();
+        this.rearAxle.centre.addVec3(15, t, t2 - Math.PI * 0.5).lineToIso();
+        this.rearAxle.leftHub.addVec3(15, t, t2 - Math.PI * 0.5).moveToIso();
+        this.rearAxle.rightHub.addVec3(15, t, t2 - Math.PI * 0.5).lineToIso();
+
 
         ctx.stroke();
         
@@ -136,12 +148,14 @@ class Car {
         this.frontAxle.centre = this.frontAxle.centre.addVec(this.speed, this.frontAxle.theta + this.frontAxle.steering);
         this.frontAxle.ground();
         let t = this.rearAxle.centre.getAngleTo(this.frontAxle.centre);
+        
         this.rearAxle.theta = t;
         this.frontAxle.theta = t;
 
         this.rearAxle.centre = this.frontAxle.centre.addVec(this.length, t + Math.PI);
         this.rearAxle.ground();
-        this.hitch = this.rearAxle.centre.addVec(10, t + Math.PI);
+        this.rearAxle.theta2 = this.rearAxle.centre.getVertAngleTo(this.frontAxle.centre);
+        this.hitch = this.rearAxle.centre.addVec3(-10, t, this.rearAxle.theta2);
         
         this.frontAxle.steering *= 0.93;
         
@@ -167,23 +181,73 @@ class Trailer {
     move () {
         
         let t = this.axle.centre.getAngleTo(this.hitchedTo.hitch);
+        let t2 = this.axle.centre.getVertAngleTo(this.hitchedTo.hitch);
         this.axle.theta = t;
+        this.axle.theta2 = t2;
 
         this.axle.centre = this.hitchedTo.hitch.addVec(this.length, t + Math.PI);
         this.axle.ground();
-        this.hitch = this.axle.centre.addVec(10, t + Math.PI);
+        this.hitch = this.axle.centre.addVec3(-30, t, t2);
         
         }
         
         draw () {
-        ctx.strokeStyle = this.colour;
+        const t = this.axle.theta;
+        const t2 = this.axle.theta2;
 
+        // Cuboid corners
+        const blf = this.axle.leftHub.addVec3(30, t, t2);
+        const brf = this.axle.rightHub.addVec3(30, t, t2);
+        const blr = this.axle.leftHub.addVec3(-30, t, t2);
+        const brr = this.axle.rightHub.addVec3(-30, t, t2);
+        const tlr = blr.addVec3(25, t, t2 - Math.PI * 0.5);
+        const trr = brr.addVec3(25, t, t2 - Math.PI * 0.5);
+        const tlf = blf.addVec3(25, t, t2 - Math.PI * 0.5);
+        const trf = brf.addVec3(25, t, t2 - Math.PI * 0.5);
+
+        // Wheelarches
+        const wlf = this.axle.leftHub.addVec3(8, t, t2);
+        const wlr = this.axle.leftHub.addVec3(-8, t, t2);
+        const wrf = this.axle.rightHub.addVec3(8, t, t2);
+        const wrr = this.axle.rightHub.addVec3(-8, t, t2);
+        
         // Draw the trailer box
+        ctx.strokeStyle = this.colour;
         ctx.lineWidth = 3;
         ctx.beginPath();
+        // Axle
         this.axle.leftHub.moveToIso()
         this.axle.rightHub.lineToIso()
-        this.axle.centre.moveToIso()
+        // Base
+        brf.moveToIso();
+        blf.lineToIso();
+        wlf.lineToIso();
+        wlr.moveToIso();
+        blr.lineToIso();
+        brr.lineToIso();
+        wrr.lineToIso();
+        wrf.moveToIso();
+        brf.lineToIso();
+        
+        // Uprights
+        blr.moveToIso();
+        tlr.lineToIso();
+        tlf.lineToIso();
+        blf.lineToIso();
+
+        brr.moveToIso();
+        trr.lineToIso();
+        trf.lineToIso();
+        brf.lineToIso();
+
+        tlf.moveToIso();
+        trf.lineToIso();
+        
+        tlr.moveToIso();
+        trr.lineToIso();
+
+        // Tow bar
+        this.axle.centre.addVec3(30, t, t2).moveToIso()
         this.hitchedTo.hitch.lineToIso()
         ctx.stroke();
 
@@ -206,9 +270,18 @@ class Pos {
                         this.y + length * -Math.sin(theta),
                         this.z);
     }
+    addVec3(length, theta1, theta2) {
+        return new Pos(this.x + length * -Math.cos(theta1) * Math.cos(theta2),
+                        this.y + length * -Math.sin(theta1) * Math.cos(theta2),
+                        this.z + length * -Math.sin(theta2));
+    }
     getAngleTo(pos) {
         return Math.atan2(this.y - pos.y, 
             this.x - pos.x);
+    }
+    getVertAngleTo (pos) {
+        return Math.atan2(this.z - pos.z, 
+            Math.hypot(this.x - pos.x,this.y - pos.y));
     }
     toIso () {
         const x = this.x - map.follow.coords.x + 250;
@@ -232,6 +305,7 @@ class Axle {
     constructor(x, y, theta, width, steering = 0) {
         this.centre = new Pos (x, y);
         this.theta = theta;
+        this.theta2 = 0;
         this.steering = steering;
         this.offset = width * 0.5;
     }
@@ -382,7 +456,7 @@ function drawWheel(cx, cy, cz, r, headingRad, colour='#aaa') {
   ctx.rotate(angle);
   ctx.beginPath();
   ctx.ellipse(0, 0, s1, s2, 0, 0, Math.PI * 2);
-  ctx.fillStyle = '#555';
+  ctx.fillStyle = '#88888866';
   ctx.fill();
   ctx.lineWidth = 2;
   ctx.strokeStyle = colour;
