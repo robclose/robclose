@@ -3,27 +3,26 @@
 const ctx = document.getElementById('canvas').getContext('2d');
 const gameWidth = document.getElementById('canvas').width;
 const gameHeight = document.getElementById('canvas').height;
-const gridSize = 50;
+const gridSize = 30;
 let keys = [];
 let train1 = [];
-let terrain = {arr: [
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-    [0,0,1,1,1,1,1,0,0,0],
-    [0,0,1,2,2,1,1,0,0,0],
-    [0,0,1,2,2,1,1,0,0,0],
-    [0,0,1,2,2,1,1,0,0,0],
-    [0,0,1,2,2,1,1,0,0,0],
-    [0,0,1,2,2,1,0,0,0,0],
-    [0,0,1,2,2,1,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0],
-],
+let terrain = {arr: [],
+    // [0,0,1,2,2,1,0,0,0,0],
+    // [0,0,1,1,1,1,0,0,0,0],
+    // [0,0,1,2,3,3,2,1,0,0],
+    // [0,0,1,2,4,4,2,1,0,0],
+    // [0,0,1,2,4,4,2,0,0,0],
+    // [0,1,2,3,4,5,3,2,1,0],
+    // [0,0,1,2,2,3,2,1,0,0],
+    // [0,0,1,2,2,1,0,0,0,0],
+    // [0,0,1,2,2,1,0,0,0,0],
+    // [0,0,1,2,2,1,0,0,0,0],
 z: function (x, y) {
     let grid = [Math.floor(x/gridSize), Math.ceil(x/gridSize),
                 Math.floor(y/gridSize), Math.ceil(y/gridSize)];
     let mod = grid.map ( g => {
-        let m = g % 10;
-        if (m < 0) m += 10;
+        let m = g % this.arr[0].length;
+        if (m < 0) m += this.arr[0].length;
         return m;
     });
     let heights = []
@@ -38,27 +37,45 @@ z: function (x, y) {
     const a = heights[0] * (1 - tx) + heights[1] * tx;
     const b = heights[2] * (1 - tx) + heights[3] * tx;
 
-    return 20 *( a * (1 - ty) + b * ty);
+    return 10 *( a * (1 - ty) + b * ty);
 
+},
+gen: function (w, h, numHills = 5) {
+  const map = Array.from({ length: h }, () => Array(w).fill(0));
+
+  for (let i = 0; i < numHills; i++) {
+    const cx = Math.random() * w;
+    const cy = Math.random() * h;
+    const r = Math.random() * 8 + 4;      // radius
+    const hgt = Math.random() * 20 - 10;  // can be hill or valley
+
+    // apply to all nearby grid cells, wrapping around edges
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        // shortest toroidal distance in x/y
+        let dx = Math.abs(x - cx);
+        let dy = Math.abs(y - cy);
+        if (dx > w / 2) dx = w - dx;
+        if (dy > h / 2) dy = h - dy;
+
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < r) {
+          map[y][x] += hgt * (1 - d / r);
+        }
+      }
+    }
+  }
+
+  this.arr = map;
 }
 }
 
 const map = {
     draw: function () {
-        const gridStartX = (Math.floor(map.follow.coords.x / gridSize) - 12);
-        const gridEndX = (Math.floor(map.follow.coords.x / gridSize) + 12);
-        const gridStartY = (Math.floor(map.follow.coords.y / gridSize) - 12);
-        const gridEndY = (Math.floor(map.follow.coords.y / gridSize) + 12);
-        //ctx.strokeStyle = '#55555555';
-        //ctx.beginPath();
-        // for (let i = gridStartX ; i <= gridEndX ; i += 50) {
-        //     new Pos(i,gridStartY).moveToIso();
-        //     new Pos(i,gridEndY).lineToIso();
-        // }
-        // for (let j = gridStartY; j <= gridEndY ; j += 50) {
-        //     new Pos(gridStartX ,j).moveToIso();
-        //     new Pos(gridEndX ,j).lineToIso();
-        // }
+        const gridStartX = (Math.floor(map.follow.coords.x / gridSize) - 600/gridSize);
+        const gridEndX = (Math.floor(map.follow.coords.x / gridSize) + 600/gridSize);
+        const gridStartY = (Math.floor(map.follow.coords.y / gridSize) - 600/gridSize);
+        const gridEndY = (Math.floor(map.follow.coords.y / gridSize) + 600/gridSize);
 
         for (let i = gridStartX ; i <= gridEndX ; i++) {
             for (let j = gridStartY; j <= gridEndY ; j++) {
@@ -73,8 +90,6 @@ const map = {
                 ctx.fill();
             }
         }
-      
-        //ctx.stroke();
     },
     follow: null
 }
@@ -261,6 +276,7 @@ function gameLoop() {
 }
 
 train1.push(new Car('red') );
+terrain.gen(30, 30, 15);
 
 map.follow = train1[0];
 requestAnimationFrame(gameLoop);
