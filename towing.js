@@ -69,17 +69,33 @@ const map = {
 
         for (let i = gridStartX ; i <= gridEndX ; i++) {
             for (let j = gridStartY; j <= gridEndY ; j++) {
-                (i+j) % 2 == 0 ? ctx.fillStyle = '#55555555' : ctx.fillStyle = '#555555bb' ;
+                let alpha
+                let colour = '30 150 30';
+                (i+j) % 2 == 0 ? alpha = '50%' : alpha = '80%' ;
                 ctx.beginPath();
                 const x0 = i * gridSize;
                 const x1 = (i + 1) * gridSize;
                 const y0 = j * gridSize;
                 const y1 = (j + 1) * gridSize;
+                let z = [terrain.z(x0, y0),
+                    terrain.z(x1, y0),
+                    terrain.z(x1, y1),
+                    terrain.z(x0, y1)];
+                z = z.map ( z0 => {
+                    if (z0 < -40) {
+                        colour =  '50 50 200';
+                        return  -40;
+                } else {
+                    return z0;
+                }
+
+            });
+            ctx.fillStyle = `rgb(${colour} / ${alpha})`;
                 // Draw a 4 sided shape for each grid square
-                new Pos(x0, y0, terrain.z(x0, y0)).moveToIso();
-                new Pos(x1, y0, terrain.z(x1, y0)).lineToIso();
-                new Pos(x1, y1, terrain.z(x1, y1)).lineToIso();
-                new Pos(x0, y1, terrain.z(x0, y1)).lineToIso();
+                new Pos(x0, y0, z[0]).moveToIso();
+                new Pos(x1, y0, z[1]).lineToIso();
+                new Pos(x1, y1, z[2]).lineToIso();
+                new Pos(x0, y1, z[3]).lineToIso();
                 ctx.closePath();
                 ctx.fill();
             }
@@ -109,18 +125,21 @@ class Car {
         
         ctx.strokeStyle = this.colour;
 
-         // Draw the car box
+         // Draw the car axles
         ctx.lineWidth = 3;
         ctx.beginPath();
         this.frontAxle.leftHub.moveToIso();
         this.frontAxle.rightHub.lineToIso();
         this.rearAxle.leftHub.moveToIso();
         this.rearAxle.rightHub.lineToIso();
+        ctx.stroke();
+        ctx.lineWidth = 6;
+        ctx.beginPath();
         this.frontAxle.centre.moveToIso();
         this.rearAxle.centre.lineToIso();
-        this.rearAxle.centre.addVec3(15, t, t2 - Math.PI * 0.5).lineToIso();
-        this.rearAxle.leftHub.addVec3(15, t, t2 - Math.PI * 0.5).moveToIso();
-        this.rearAxle.rightHub.addVec3(15, t, t2 - Math.PI * 0.5).lineToIso();
+        this.rearAxle.centre.addVec3(15, t, t2 - Math.PI * 0.7).lineToIso();
+        this.rearAxle.leftHub.addVec3(15, t, t2 - Math.PI * 0.7).moveToIso();
+        this.rearAxle.rightHub.addVec3(15, t, t2 - Math.PI * 0.7).lineToIso();
 
         ctx.stroke();
         
@@ -338,8 +357,8 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-train1.push(new Car('red') );
-terrain.gen(30, 30, 15);
+train1.push(new Car('darkpurple') );
+terrain.gen(30, 30, 30);
 
 map.follow = train1[0];
 requestAnimationFrame(gameLoop);
