@@ -58,7 +58,57 @@ let terrain = {
     this.arr = map;
 }
 }
-
+const roadMap = { arr: [
+[0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+[0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,1,1,1,1,1,0,0,0],
+[0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,1,1,1,1,1,0,0],
+[1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1],
+[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1],
+[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
+[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
+[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0]
+],
+isRoad: function (x, y) {
+            let m = x % this.arr[0].length;
+            if (m < 0) m += this.arr[0].length;
+            let n = y % this.arr[0].length;
+            if (n < 0) n += this.arr[0].length;
+            return !!this.arr[m][n];
+        }
+    
+}
 const map = {
     draw: function () {
         // Calculate the range of the grid visible on screen
@@ -69,9 +119,9 @@ const map = {
 
         for (let i = gridStartX ; i <= gridEndX ; i++) {
             for (let j = gridStartY; j <= gridEndY ; j++) {
-                let alpha
-                let colour = '30 150 30';
-                (i+j) % 2 == 0 ? alpha = '50%' : alpha = '80%' ;
+                let alpha;
+                let colour;
+                (i+j) % 2 == 0 ? alpha = '90%' : alpha = '100%' ;
                 ctx.beginPath();
                 const x0 = i * gridSize;
                 const x1 = (i + 1) * gridSize;
@@ -81,16 +131,16 @@ const map = {
                     terrain.z(x1, y0),
                     terrain.z(x1, y1),
                     terrain.z(x0, y1)];
-                z = z.map ( z0 => {
-                    if (z0 < -40) {
-                        colour =  '50 50 200';
-                        return  -40;
-                } else {
-                    return z0;
-                }
+                z = z.map ( z0 => Math.max(z0, -40));
+                   
 
-            });
-            ctx.fillStyle = `rgb(${colour} / ${alpha})`;
+            colour = `${Math.floor(180 - z[0] * 0.8)} 70% ${Math.floor(50 + z[0] * 0.1)}%`;
+            if (roadMap.isRoad(i, j) && Math.min(...z) > -40) {
+                colour = '50 5% 70%';
+            }
+
+
+            ctx.fillStyle = `hsl(${colour} / ${alpha})`;
                 // Draw a 4 sided shape for each grid square
                 new Pos(x0, y0, z[0]).moveToIso();
                 new Pos(x1, y0, z[1]).lineToIso();
@@ -113,7 +163,7 @@ class Car {
         this.colour = colour;
         this.frontAxle = new Axle(300, 300, 0, this.width, 0);
         this.rearAxle = new Axle(300 - this.length, 300, 0, this.width, 0);
-        this.hitch = this.rearAxle.centre.addVec(10, 0);
+        this.hitch = this.rearAxle.centre.addVec(5, 0);
     }
     get coords () {
         return this.frontAxle.centre;
@@ -136,10 +186,10 @@ class Car {
         ctx.lineWidth = 6;
         ctx.beginPath();
         this.frontAxle.centre.moveToIso();
-        this.rearAxle.centre.lineToIso();
-        this.rearAxle.centre.addVec3(15, t, t2 - Math.PI * 0.7).lineToIso();
-        this.rearAxle.leftHub.addVec3(15, t, t2 - Math.PI * 0.7).moveToIso();
-        this.rearAxle.rightHub.addVec3(15, t, t2 - Math.PI * 0.7).lineToIso();
+        this.hitch.lineToIso();
+        this.rearAxle.centre.addVec3(15, t, t2 - Math.PI * 0.8).lineToIso();
+        this.rearAxle.leftHub.addVec3(15, t, t2 - Math.PI * 0.8).moveToIso();
+        this.rearAxle.rightHub.addVec3(15, t, t2 - Math.PI * 0.8).lineToIso();
 
         ctx.stroke();
         
@@ -178,10 +228,10 @@ class Car {
 }
 
 class Trailer {
-    constructor(hitchedTo) {
+    constructor(hitchedTo, colour) {
         this.length = 50;
         this.width = hitchedTo.width;
-        this.colour = 'orange';
+        this.colour = colour;
         this.hitchedTo = hitchedTo;
         this.axle = new Axle(hitchedTo.hitch.x - this.length, 300, 0, this.width, 0);
         this.hitch = this.axle.centre.addVec(10, 0);
@@ -295,7 +345,7 @@ class Pos {
         const x = this.x - map.follow.coords.x + 250;
         const y = this.y - map.follow.coords.y + 250;
         const sx = (x - y);
-        const sy = (x + y) * 0.5 - this.z;
+        const sy = (x + y) * 0.5 * 1.0 - this.z;
         return { x: sx + 500, y: sy + 100 };
     }
     moveToIso () {
@@ -357,7 +407,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-train1.push(new Car('darkpurple') );
+train1.push(new Car('firebrick') );
 terrain.gen(30, 30, 30);
 
 map.follow = train1[0];
@@ -365,7 +415,7 @@ requestAnimationFrame(gameLoop);
 
 window.addEventListener('keydown', (e) => {
     if (e.key == 'q') {
-        train1.push(new Trailer(train1[train1.length - 1]));
+        train1.push(new Trailer(train1[train1.length - 1], 'darkmagenta'));
     }
     else if (!keys.includes(e.key)) keys.push(e.key);
 });
@@ -465,7 +515,7 @@ function drawWheel(cx, cy, cz, r, headingRad, colour='#aaa') {
   ctx.fillStyle = '#88888866';
   ctx.fill();
   ctx.lineWidth = 2;
-  ctx.strokeStyle = colour;
+  ctx.strokeStyle = '#444';
   ctx.stroke();
   ctx.restore();
 }
