@@ -6,141 +6,145 @@ const gameHeight = document.getElementById('canvas').height;
 const gridSize = 30;
 let keys = [];
 let train1 = [];
-let terrain = {
-    arr: [],
-    z: function (x, y) {
-        let grid = [Math.floor(x/gridSize), Math.ceil(x/gridSize),
-                    Math.floor(y/gridSize), Math.ceil(y/gridSize)];
-        let mod = grid.map ( g => {
-            let m = g % this.arr[0].length;
-            if (m < 0) m += this.arr[0].length;
-            return m;
-        });
-        let heights = []
-        heights[0] = this.arr[mod[0]][mod[2]]; 
-        heights[1] = this.arr[mod[1]][mod[2]]; 
-        heights[2] = this.arr[mod[0]][mod[3]]; 
-        heights[3] = this.arr[mod[1]][mod[3]];
+const roadMap = [
+[0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+[1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
+[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+[0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0]
+]
 
-        const tx = x / gridSize - grid[0];
-        const ty = y / gridSize - grid[2];
+class Grid {
+    constructor(terrainSize) {
+        this.terrain = this.terrainGen(terrainSize , terrainSize , 30);
+        this.follow = null;
+        
+    }
 
-        const a = heights[0] * (1 - tx) + heights[1] * tx;
-        const b = heights[2] * (1 - tx) + heights[3] * tx;
+    terrainGen (w, h, numHills)  {
 
-        return 10 *( a * (1 - ty) + b * ty);
+        let map = Array.from({ length: h }, () => Array(w).fill(0));
 
-    },
-    gen: function (w, h, numHills) {
-    const map = Array.from({ length: h }, () => Array(w).fill(0));
+        for (let i = 0; i < numHills; i++) {
+            const cx = Math.random() * w;
+            const cy = Math.random() * h;
+            const r = Math.random() * 8 + 4;
+            const hgt = Math.random() * 12 - 5; 
 
-    for (let i = 0; i < numHills; i++) {
-        const cx = Math.random() * w;
-        const cy = Math.random() * h;
-        const r = Math.random() * 8 + 4;
-        const hgt = Math.random() * 12 - 5;  // can be hill or valley
+            // apply to all nearby grid cells, wrapping around edges
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    let dx = Math.abs(x - cx);
+                    let dy = Math.abs(y - cy);
+                    if (dx > w / 2) dx = w - dx;
+                    if (dy > h / 2) dy = h - dy;
 
-        // apply to all nearby grid cells, wrapping around edges
-        for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-            let dx = Math.abs(x - cx);
-            let dy = Math.abs(y - cy);
-            if (dx > w / 2) dx = w - dx;
-            if (dy > h / 2) dy = h - dy;
-
-            const d = Math.sqrt(dx*dx + dy*dy);
-            if (d < r) {
-            map[y][x] += hgt * (1 - d / r);
+                    const d = Math.sqrt(dx*dx + dy*dy);
+                    if (d < r) {
+                    map[y][x] += hgt * (1 - d / r);
+                    }
+                }
             }
         }
+        return map;
     }
-  }
-    this.arr = map;
-}
-}
-const roadMap = { arr: [
-[0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
-[0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0],
-[0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
-[0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0],
-[0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,1,1,1,1,1,0,0],
-[1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1],
-[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1],
-[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1],
-[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
-[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
-[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
-[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
-[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1],
-[1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0],
-[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0]
-],
-isRoad: function (x, y) {
-            let m = x % this.arr[0].length;
-            if (m < 0) m += this.arr[0].length;
-            let n = y % this.arr[0].length;
-            if (n < 0) n += this.arr[0].length;
-            return !!this.arr[m][n];
+
+    getHeight(x, y) {
+        const gx = x / gridSize;
+        const gy = y / gridSize;
+        const x0 = Math.floor(gx), x1 = Math.ceil(gx);
+        const y0 = Math.floor(gy), y1 = Math.ceil(gy);
+
+        const max = this.terrain.length;
+        const wrap = (v) => ((v % max) + max) % max;
+        const h00 = this.terrain[wrap(y0)][wrap(x0)];
+        const h10 = this.terrain[wrap(y0)][wrap(x1)];
+        const h01 = this.terrain[wrap(y1)][wrap(x0)];
+        const h11 = this.terrain[wrap(y1)][wrap(x1)];
+
+        // Bilinear interpolation
+        const tx = gx - x0;
+        const ty = gy - y0;
+        const a = h00 * (1 - tx) + h10 * tx;
+        const b = h01 * (1 - tx) + h11 * tx;
+        return 10 * (a * (1 - ty) + b * ty);
+     }
+
+    isRoad (x, y) {
+            const max = roadMap.length;
+            const wrap = (v) => ((v % max) + max) % max;
+            return !!roadMap[wrap(x)][wrap(y)];
         }
     
-}
-const map = {
-    draw: function () {
+    draw () {
         // Calculate the range of the grid visible on screen
-        const gridStartX = (Math.floor(map.follow.coords.x / gridSize) - 660/gridSize);
-        const gridEndX = (Math.floor(map.follow.coords.x / gridSize) + 660/gridSize);
-        const gridStartY = (Math.floor(map.follow.coords.y / gridSize) - 660/gridSize);
-        const gridEndY = (Math.floor(map.follow.coords.y / gridSize) + 660/gridSize);
+        const gridStartX = (Math.floor(this.follow.coords.x / gridSize) - 660/gridSize);
+        const gridEndX = (Math.floor(this.follow.coords.x / gridSize) + 660/gridSize);
+        const gridStartY = (Math.floor(this.follow.coords.y / gridSize) - 660/gridSize);
+        const gridEndY = (Math.floor(this.follow.coords.y / gridSize) + 660/gridSize);
 
         for (let i = gridStartX ; i <= gridEndX ; i++) {
             for (let j = gridStartY; j <= gridEndY ; j++) {
                 let alpha;
                 let colour;
                 (i+j) % 2 == 0 ? alpha = '90%' : alpha = '100%' ;
-                ctx.beginPath();
                 const x0 = i * gridSize;
                 const x1 = (i + 1) * gridSize;
                 const y0 = j * gridSize;
                 const y1 = (j + 1) * gridSize;
-                let z = [terrain.z(x0, y0),
-                    terrain.z(x1, y0),
-                    terrain.z(x1, y1),
-                    terrain.z(x0, y1)];
+                let z = [this.getHeight(x0, y0),
+                    this.getHeight(x1, y0),
+                    this.getHeight(x1, y1),
+                    this.getHeight(x0, y1)];
                 z = z.map ( z0 => Math.max(z0, -40));
                    
 
-            colour = `${Math.floor(180 - z[0] * 0.8)} 70% ${Math.floor(50 + z[0] * 0.1)}%`;
-            if (roadMap.isRoad(i, j) && Math.min(...z) > -40) {
-                colour = '50 60% 65%';
+            colour = `${Math.floor(120 - z[0] * 0.5)} 70% ${Math.floor(50 + z[0] * 0.1)}%`;
+            if (this.isRoad(i, j) && Math.max(...z) > -40) {
+                colour = '80 30% 70%';
+            }
+            if (Math.max(...z) <= -40) {
+                colour = '210 70% 40%'
             }
 
 
             ctx.fillStyle = `hsl(${colour} / ${alpha})`;
+                ctx.beginPath();
                 // Draw a 4 sided shape for each grid square
                 new Pos(x0, y0, z[0]).moveToIso();
                 new Pos(x1, y0, z[1]).lineToIso();
@@ -150,9 +154,9 @@ const map = {
                 ctx.fill();
             }
         }
-    },
-    follow: null
+    }
 }
+
 
 class Car {
     constructor (colour) {
@@ -203,15 +207,15 @@ class Car {
     }
 
     move () {
-        this.frontAxle.centre = this.frontAxle.centre.addVec(this.speed, this.frontAxle.theta + this.frontAxle.steering);
-        this.frontAxle.ground();
+        this.frontAxle.centre.moveVec(this.speed, this.frontAxle.theta + this.frontAxle.steering);
+        this.frontAxle.ground(map);
         let t = this.rearAxle.centre.getAngleTo(this.frontAxle.centre);
         
         this.rearAxle.theta = t;
         this.frontAxle.theta = t;
 
         this.rearAxle.centre = this.frontAxle.centre.addVec(this.length, t + Math.PI);
-        this.rearAxle.ground();
+        this.rearAxle.ground(map);
         this.rearAxle.theta2 = this.rearAxle.centre.getVertAngleTo(this.frontAxle.centre);
         this.hitch = this.rearAxle.centre.addVec3(-10, t, this.rearAxle.theta2);
         
@@ -244,7 +248,7 @@ class Trailer {
         this.axle.theta2 = t2;
 
         this.axle.centre = this.hitchedTo.hitch.addVec(this.length, t + Math.PI);
-        this.axle.ground();
+        this.axle.ground(map);
         this.hitch = this.axle.centre.addVec3(-30, t, t2);
         
         }
@@ -328,10 +332,19 @@ class Pos {
                         this.y + length * -Math.sin(theta),
                         this.z);
     }
+    moveVec(length, theta) {
+        this.x += length * -Math.cos(theta);
+        this.y += length * -Math.sin(theta);
+    }
     addVec3(length, theta1, theta2) {
         return new Pos(this.x + length * -Math.cos(theta1) * Math.cos(theta2),
                         this.y + length * -Math.sin(theta1) * Math.cos(theta2),
                         this.z + length * -Math.sin(theta2));
+    }
+    moveVec3(length, theta1, theta2) {
+        this.x += length * -Math.cos(theta1) * Math.cos(theta2);
+        this.y += length * -Math.sin(theta1) * Math.cos(theta2);
+        this.z += length * -Math.sin(theta2);
     }
     getAngleTo(pos) {
         return Math.atan2(this.y - pos.y, 
@@ -381,8 +394,8 @@ class Axle {
         return [this.rightHub.addVec(8, this.theta + this.steering),
                 this.rightHub.addVec(-8, this.theta + this.steering)];
     }
-    ground () {
-        this.centre.z = terrain.z(this.centre.x, this.centre.y);
+    ground (m) {
+        this.centre.z = m.getHeight(this.centre.x, this.centre.y);
     }
 
 }
@@ -408,7 +421,7 @@ function gameLoop() {
 }
 
 train1.push(new Car('firebrick') );
-terrain.gen(30, 30, 30);
+let map = new Grid(30);
 
 map.follow = train1[0];
 requestAnimationFrame(gameLoop);
