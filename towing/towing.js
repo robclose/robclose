@@ -146,6 +146,8 @@ class Car {
         this.rearAxle.leftHub.moveToIso();
         this.rearAxle.rightHub.lineToIso();
         ctx.stroke();
+
+        // Draw the car body
         ctx.lineWidth = 6;
         ctx.beginPath();
         this.frontAxle.centre.moveToIso();
@@ -213,7 +215,6 @@ class Trailer {
     draw () {
         const t = this.axle.theta;
         const t2 = this.axle.theta2;
-        let point = this.axle.leftHub.addVec(0,0);
 
         // Cuboid corners
         const blf = this.axle.leftHub.addVec3(30, t, t2);
@@ -260,6 +261,7 @@ class Trailer {
         trf.lineToIso();
         brf.lineToIso();
 
+        // Roof ends
         tlf.moveToIso();
         trf.lineToIso();
         
