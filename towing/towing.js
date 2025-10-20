@@ -158,10 +158,10 @@ class Car {
 
         ctx.stroke();
         
-        ['frontAxle', 'rearAxle'].forEach( a => {
+        ['frontAxle', 'rearAxle'].forEach( axle => {
             ['leftHub', 'rightHub'].forEach( h => {
-                const hub = this[a][h];
-                drawWheel(hub.x, hub.y, hub.z, 8, this[a].theta + this[a].steering + Math.PI * 0.5, this.colour);
+                const hub = this[axle][h];
+                drawWheel(hub.x, hub.y, hub.z, 8, this[axle].theta + this[axle].steering + Math.PI * 0.5, this.colour);
             });
         });
     }
@@ -300,12 +300,6 @@ class Pos {
         return new Pos(this.x + length * -Math.cos(theta1) * Math.cos(theta2),
                         this.y + length * -Math.sin(theta1) * Math.cos(theta2),
                         this.z + length * -Math.sin(theta2));
-    }
-    moveVec3(length, theta1, theta2) {
-        this.x += length * -Math.cos(theta1) * Math.cos(theta2);
-        this.y += length * -Math.sin(theta1) * Math.cos(theta2);
-        this.z += length * -Math.sin(theta2);
-        return this;
     }
     getAngleTo(pos) {
         return Math.atan2(this.y - pos.y, 
