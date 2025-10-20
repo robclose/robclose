@@ -11,10 +11,10 @@ let train1 = [];
 
 
 class Grid {
-    constructor(terrainSize, tilesize = gridSize) {
+    constructor(terrainSize, tileSize = gridSize) {
         this.terrain = this.terrainGen(terrainSize , terrainSize , 30);
         this.follow = null;
-        this.tilesize = tilesize;
+        this.tileSize = tileSize;
     }
 
     terrainGen (w, h, numHills)  {
@@ -46,8 +46,8 @@ class Grid {
     }
 
     getHeight(x, y) {
-        const gx = x / this.tilesize;
-        const gy = y / this.tilesize;
+        const gx = x / this.tileSize;
+        const gy = y / this.tileSize;
         const x0 = Math.floor(gx), x1 = Math.ceil(gx);
         const y0 = Math.floor(gy), y1 = Math.ceil(gy);
 
@@ -74,10 +74,10 @@ class Grid {
     
     draw () {
         // Calculate the range of the grid visible on screen
-        const gridStartX = (Math.floor(this.follow.coords.x / gridSize) - 660/gridSize);
-        const gridEndX = (Math.floor(this.follow.coords.x / gridSize) + 660/gridSize);
-        const gridStartY = (Math.floor(this.follow.coords.y / gridSize) - 660/gridSize);
-        const gridEndY = (Math.floor(this.follow.coords.y / gridSize) + 660/gridSize);
+        const gridStartX = (Math.floor(this.follow.coords.x / this.tileSize) - 660/this.tileSize);
+        const gridEndX = (Math.floor(this.follow.coords.x / this.tileSize) + 660/this.tileSize);
+        const gridStartY = (Math.floor(this.follow.coords.y / this.tileSize) - 660/this.tileSize);
+        const gridEndY = (Math.floor(this.follow.coords.y / this.tileSize) + 660/this.tileSize);
         let point = new Pos(0,0,0);
 
         for (let i = gridStartX ; i <= gridEndX ; i++) {
@@ -85,18 +85,17 @@ class Grid {
                 let alpha;
                 let colour;
                 (i+j) % 2 == 0 ? alpha = '90%' : alpha = '100%' ;
-                const x0 = i * gridSize;
-                const x1 = (i + 1) * gridSize;
-                const y0 = j * gridSize;
-                const y1 = (j + 1) * gridSize;
-                let z = [this.getHeight(x0, y0),
-                    this.getHeight(x1, y0),
-                    this.getHeight(x1, y1),
-                    this.getHeight(x0, y1)];
+                const x0 = i * this.tileSize;
+                const x1 = (i + 1) * this.tileSize;
+                const y0 = j * this.tileSize;
+                const y1 = (j + 1) * this.tileSize;
+                let z = [   this.getHeight(x0, y0),
+                            this.getHeight(x1, y0),
+                            this.getHeight(x1, y1),
+                            this.getHeight(x0, y1)  ];
                 z = z.map ( z0 => Math.max(z0, -40));
-                   
 
-            colour = `${Math.floor(120 - z[0] * 0.5)} 70% ${Math.floor(50 + z[0] * 0.1)}%`;
+            colour = `${Math.floor(120 - z[0] * 0.5)} 70% ${Math.floor(50 + z[0] * 0.15)}%`;
             if (this.isRoad(i, j) && Math.max(...z) > -40) {
                 colour = '80 30% 70%';
             }
@@ -104,21 +103,19 @@ class Grid {
                 colour = '210 70% 40%'
             }
 
-
             ctx.fillStyle = `hsl(${colour} / ${alpha})`;
             ctx.beginPath();
             // Draw a filled quad for each grid square
-            point.move(x0, y0, z[0]).moveToIso();
-            point.move(x1, y0, z[1]).lineToIso();
-            point.move(x1, y1, z[2]).lineToIso();
-            point.move(x0, y1, z[3]).lineToIso();
+            point.move(x0, y0, z[0]).moveToIso()
+                .move(x1, y0, z[1]).lineToIso()
+                .move(x1, y1, z[2]).lineToIso()
+                .move(x0, y1, z[3]).lineToIso();
             ctx.closePath();
             ctx.fill();
             }
         }
     }
 }
-
 
 class Car {
     constructor (colour) {
@@ -165,7 +162,6 @@ class Car {
                 drawWheel(hub.x, hub.y, hub.z, 8, this[a].theta + this[a].steering + Math.PI * 0.5, this.colour);
             });
         });
-
     }
 
     move () {
@@ -182,7 +178,6 @@ class Car {
         this.hitch = this.rearAxle.centre.addVec3(-10, t, this.rearAxle.theta2);
         
         this.frontAxle.steering *= 0.93;
-        
     }
 
     steerLeft() {
@@ -215,9 +210,10 @@ class Trailer {
         
         }
         
-        draw () {
+    draw () {
         const t = this.axle.theta;
         const t2 = this.axle.theta2;
+        let point = this.axle.leftHub.addVec(0,0);
 
         // Cuboid corners
         const blf = this.axle.leftHub.addVec3(30, t, t2);
@@ -279,7 +275,6 @@ class Trailer {
                 const hub = this.axle[h];
                 drawWheel(hub.x, hub.y, hub.z, 8, this.axle.theta + Math.PI * 0.5, this.colour);
                 });
-
     }
 }
 
@@ -297,6 +292,7 @@ class Pos {
     moveVec(length, theta) {
         this.x += length * -Math.cos(theta);
         this.y += length * -Math.sin(theta);
+        return this;
     }
     addVec3(length, theta1, theta2) {
         return new Pos(this.x + length * -Math.cos(theta1) * Math.cos(theta2),
@@ -307,6 +303,7 @@ class Pos {
         this.x += length * -Math.cos(theta1) * Math.cos(theta2);
         this.y += length * -Math.sin(theta1) * Math.cos(theta2);
         this.z += length * -Math.sin(theta2);
+        return this;
     }
     getAngleTo(pos) {
         return Math.atan2(this.y - pos.y, 
@@ -326,10 +323,12 @@ class Pos {
     moveToIso () {
         const isoPos = this.toIso();
         ctx.moveTo(isoPos.x, isoPos.y);
+        return this;
     }
     lineToIso () {
         const isoPos = this.toIso();
         ctx.lineTo(isoPos.x, isoPos.y);
+        return this;
     }
     move(x, y, z) {
         this.x = x;
@@ -365,8 +364,8 @@ class Axle {
     ground (m) {
         this.centre.z = m.getHeight(this.centre.x, this.centre.y);
     }
-
 }
+
 
 function gameLoop() {
 
