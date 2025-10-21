@@ -47,7 +47,7 @@ export class Car {
         ['frontAxle', 'rearAxle'].forEach(axle => {
             ['leftHub', 'rightHub'].forEach(h => {
                 const hub = this[axle][h];
-                drawWheel(ctx, hub.toIso(), 8, this[axle].theta + this[axle].steering + Math.PI * 0.5, this.colour);
+                drawWheel(ctx, hub.toIso(), 8, this[axle].theta + this[axle].steering + Math.PI * 0.5);
             });
         });
     }
@@ -160,7 +160,7 @@ export class Trailer {
 
         ['leftHub', 'rightHub'].forEach(h => {
             const hub = this.axle[h];
-            drawWheel(ctx, hub.toIso(), 8, this.axle.theta + Math.PI * 0.5, this.colour);
+            drawWheel(ctx, hub.toIso(), 8, this.axle.theta + Math.PI * 0.5);
         });
     }
 }

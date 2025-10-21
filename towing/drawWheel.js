@@ -1,7 +1,7 @@
 "use strict";
 
 // Draw a wheel as properly projected ellipse
-export function drawWheel(ctx, center, r, headingRad, colour = '#aaa') {
+export function drawWheel(ctx, center, r, headingRad) {
 
     const normalize = (v) => {
         const L = Math.hypot(v.x, v.y, v.z);
@@ -21,14 +21,12 @@ export function drawWheel(ctx, center, r, headingRad, colour = '#aaa') {
     // choose two orthonormal basis vectors spanning wheel plane:
     // we want the wheel plane to be perpendicular to forward 'f' and include vertical axis.
     // Let v = world up (0,0,1)
-    const vUp = { x: 0, y: 0, z: 1 };
+    const v = { x: 0, y: 0, z: 1 };
 
-    // u = normalized( f cross vUp )  -- this runs across the wheel (left-right)
-    // cross(f, vUp) = (f.y*1 - 0, 0 - f.x*1, f.x*0 - f.y*0) = (f.y, -f.x, 0)
+    // u = normalized( f cross v )  -- this runs across the wheel (left-right)
+    // cross(f, v) = (f.y*1 - 0, 0 - f.x*1, f.x*0 - f.y*0) = (f.y, -f.x, 0)
     let u = { x: f.y, y: -f.x, z: 0 };
     u = normalize(u);
-    // v vector in plane: vertical axis mapped into wheel plane: use vUp (0,0,1)
-    const v = vUp; 
 
     // project u and v into screen space (linear)
     const pu = projectVector(u); // {x,y}
@@ -62,11 +60,7 @@ export function drawWheel(ctx, center, r, headingRad, colour = '#aaa') {
             ax = lambda1 - m11;
             ay = m01;
         }
-    } else {
-        // special case: matrix is diagonal
-        ax = 1;
-        ay = 0;
-    }
+    } 
     // normalize axis
     const aLen = Math.hypot(ax, ay) || 1;
     ax /= aLen;
