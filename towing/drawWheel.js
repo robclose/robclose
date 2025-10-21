@@ -1,9 +1,7 @@
 "use strict";
-import { Pos } from './towing.js';
 
-// Main: draw a wheel as properly projected ellipse
-// center (cx,cy,cz) in world space, radius r, heading 'heading' (radians)
-export function drawWheel(ctx, cx, cy, cz, r, headingRad, colour = '#aaa') {
+// Draw a wheel as properly projected ellipse
+export function drawWheel(ctx, center, r, headingRad, colour = '#aaa') {
 
     const normalize = (v) => {
         const L = Math.hypot(v.x, v.y, v.z);
@@ -28,17 +26,13 @@ export function drawWheel(ctx, cx, cy, cz, r, headingRad, colour = '#aaa') {
     // u = normalized( f cross vUp )  -- this runs across the wheel (left-right)
     // cross(f, vUp) = (f.y*1 - 0, 0 - f.x*1, f.x*0 - f.y*0) = (f.y, -f.x, 0)
     let u = { x: f.y, y: -f.x, z: 0 };
-    // ensure normalized (it will be length 1 if f is unit)
     u = normalize(u);
     // v vector in plane: vertical axis mapped into wheel plane: use vUp (0,0,1)
-    const v = vUp; // already normalized
-
+    const v = vUp; 
 
     // project u and v into screen space (linear)
     const pu = projectVector(u); // {x,y}
     const pv = projectVector(v); // {x,y}
-
-
 
     // Matrix A = [ pu pv ]  where A maps [cos t; sin t] -> screen (without center)
     // Compute symmetric matrix M = A * A^T = pu*pu^T + pv*pv^T
@@ -57,7 +51,6 @@ export function drawWheel(ctx, cx, cy, cz, r, headingRad, colour = '#aaa') {
     // singular values = sqrt(eigenvalues), multiplied by radius
     const s1 = r * Math.sqrt(lambda1);
     const s2 = r * Math.sqrt(Math.max(0, lambda2)); // numerical safety
-
 
     // eigenvector for lambda1 (major axis direction)
     let ax = 1, ay = 0; // fallback
@@ -81,9 +74,6 @@ export function drawWheel(ctx, cx, cy, cz, r, headingRad, colour = '#aaa') {
 
     // angle for canvas ellipse
     const angle = Math.atan2(ay, ax);
-
-    // screen center
-    const center = new Pos(cx, cy, cz).toIso();
 
     // draw filled ellipse & outline
     ctx.save();
