@@ -3,20 +3,20 @@
 import { Car, Trailer } from './vehicles.js';
 import { Grid } from './Grid.js';
 
-export const ctx = document.getElementById('canvas').getContext('2d');
 const gameWidth = document.getElementById('canvas').width;
 const gameHeight = document.getElementById('canvas').height;
 let keys = [];
 let train1 = [];
-export let camera = null;
 
-ctx.lineToIso = (pos) => {
+export let camera = null;
+export const ctx = document.getElementById('canvas').getContext('2d');
+ctx.lineToIso = function(pos)  {
         const isoPos = pos.toIso();
-        ctx.lineTo(isoPos.x, isoPos.y);
+        this.lineTo(isoPos.x, isoPos.y);
     }
-ctx.moveToIso = (pos) => {
+ctx.moveToIso = function(pos) {
     const isoPos = pos.toIso();
-    ctx.moveTo(isoPos.x, isoPos.y);
+    this.moveTo(isoPos.x, isoPos.y);
 }
 
 function gameLoop() {
