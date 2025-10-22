@@ -37,16 +37,6 @@ export class Pos {
         const sy = (x + y) * 0.5 * 1.0 - this.z;
         return { x: sx + 500, y: sy + 100 };
     }
-    moveToIso(ctx) {
-        const isoPos = this.toIso();
-        ctx.moveTo(isoPos.x, isoPos.y);
-        return this;
-    }
-    lineToIso(ctx) {
-        const isoPos = this.toIso();
-        ctx.lineTo(isoPos.x, isoPos.y);
-        return this;
-    }
     move(x, y, z) {
         this.x = x;
         this.y = y;

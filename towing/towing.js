@@ -10,6 +10,15 @@ let keys = [];
 let train1 = [];
 export let camera = null;
 
+ctx.lineToIso = (pos) => {
+        const isoPos = pos.toIso();
+        ctx.lineTo(isoPos.x, isoPos.y);
+    }
+ctx.moveToIso = (pos) => {
+    const isoPos = pos.toIso();
+    ctx.moveTo(isoPos.x, isoPos.y);
+}
+
 function gameLoop() {
 
     ctx.clearRect(0 ,0, gameWidth, gameHeight);

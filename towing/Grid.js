@@ -101,10 +101,10 @@ export class Grid {
                 this.ctx.fillStyle = `hsl(${colour} / ${alpha})`;
                 this.ctx.beginPath();
                 // Draw a filled quad for each grid square
-                point.move(x0, y0, z[0]).moveToIso(this.ctx)
-                    .move(x1, y0, z[1]).lineToIso(this.ctx)
-                    .move(x1, y1, z[2]).lineToIso(this.ctx)
-                    .move(x0, y1, z[3]).lineToIso(this.ctx);
+                this.ctx.moveToIso(point.move(x0, y0, z[0]));
+                this.ctx.lineToIso(point.move(x1, y0, z[1]));
+                this.ctx.lineToIso(point.move(x1, y1, z[2]));
+                this.ctx.lineToIso(point.move(x0, y1, z[3]));
                 this.ctx.closePath();
                 this.ctx.fill();
             }

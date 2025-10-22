@@ -27,20 +27,20 @@ export class Car {
         // Draw the car axles
         ctx.lineWidth = 3;
         ctx.beginPath();
-        this.frontAxle.leftHub.moveToIso(ctx);
-        this.frontAxle.rightHub.lineToIso(ctx);
-        this.rearAxle.leftHub.moveToIso(ctx);
-        this.rearAxle.rightHub.lineToIso(ctx);
+        ctx.moveToIso(this.frontAxle.leftHub);
+        ctx.lineToIso(this.frontAxle.rightHub);
+        ctx.moveToIso(this.rearAxle.leftHub);
+        ctx.lineToIso(this.rearAxle.rightHub);
         ctx.stroke();
 
         // Draw the car body
         ctx.lineWidth = 6;
         ctx.beginPath();
-        this.frontAxle.centre.moveToIso(ctx);
-        this.hitch.lineToIso(ctx);
-        this.rearAxle.centre.addVec3(15, t, t2 - Math.PI * 0.8).lineToIso(ctx);
-        this.rearAxle.leftHub.addVec3(15, t, t2 - Math.PI * 0.8).moveToIso(ctx);
-        this.rearAxle.rightHub.addVec3(15, t, t2 - Math.PI * 0.8).lineToIso(ctx);
+        ctx.moveToIso(this.frontAxle.centre);
+        ctx.lineToIso(this.hitch);
+        ctx.lineToIso(this.rearAxle.centre.addVec3(15, t, t2 - Math.PI * 0.8));
+        ctx.moveToIso(this.rearAxle.leftHub.addVec3(15, t, t2 - Math.PI * 0.8));
+        ctx.lineToIso(this.rearAxle.rightHub.addVec3(15, t, t2 - Math.PI * 0.8));
 
         ctx.stroke();
 
@@ -122,40 +122,40 @@ export class Trailer {
         ctx.lineWidth = 3;
         ctx.beginPath();
         // Axle
-        this.axle.leftHub.moveToIso(ctx);
-        this.axle.rightHub.lineToIso(ctx);
+        ctx.moveToIso(this.axle.leftHub);
+        ctx.lineToIso(this.axle.rightHub);
         // Base
-        brf.moveToIso(ctx);
-        blf.lineToIso(ctx);
-        wlf.lineToIso(ctx);
-        wlr.moveToIso(ctx);
-        blr.lineToIso(ctx);
-        brr.lineToIso(ctx);
-        wrr.lineToIso(ctx);
-        wrf.moveToIso(ctx);
-        brf.lineToIso(ctx);
+        ctx.moveToIso(brf);
+        ctx.lineToIso(blf);
+        ctx.lineToIso(wlf);
+        ctx.moveToIso(wlr);
+        ctx.lineToIso(blr);
+        ctx.lineToIso(brr);
+        ctx.lineToIso(wrr);
+        ctx.moveToIso(wrf);
+        ctx.lineToIso(brf);
 
         // Uprights
-        blr.moveToIso(ctx);
-        tlr.lineToIso(ctx);
-        tlf.lineToIso(ctx);
-        blf.lineToIso(ctx);
+        ctx.moveToIso(blr);
+        ctx.lineToIso(tlr);
+        ctx.lineToIso(tlf);
+        ctx.lineToIso(blf);
 
-        brr.moveToIso(ctx);
-        trr.lineToIso(ctx);
-        trf.lineToIso(ctx);
-        brf.lineToIso(ctx);
+        ctx.moveToIso(brr);
+        ctx.lineToIso(trr);
+        ctx.lineToIso(trf);
+        ctx.lineToIso(brf);
 
         // Roof ends
-        tlf.moveToIso(ctx);
-        trf.lineToIso(ctx);
+        ctx.moveToIso(tlf);
+        ctx.lineToIso(trf);
 
-        tlr.moveToIso(ctx);
-        trr.lineToIso(ctx);
+        ctx.moveToIso(tlr);
+        ctx.lineToIso(trr);
 
         // Tow bar
-        this.axle.centre.addVec3(30, t, t2).moveToIso(ctx);
-        this.hitchedTo.hitch.lineToIso(ctx);
+        ctx.moveToIso(this.axle.centre.addVec3(30, t, t2));
+        ctx.lineToIso(this.hitchedTo.hitch);
         ctx.stroke();
 
         ['leftHub', 'rightHub'].forEach(h => {
