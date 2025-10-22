@@ -14,9 +14,6 @@ export class Car {
         this.rearAxle = new Axle(map, 300 - this.length, 300, 0, this.width, 0);
         this.hitch = this.rearAxle.centre.addVec(5, 0);
     }
-    get coords() {
-        return this.frontAxle.centre;
-    }
     draw() {
 
         const t = this.rearAxle.theta;

@@ -8,7 +8,6 @@ const gameHeight = document.getElementById('canvas').height;
 let keys = [];
 let train1 = [];
 
-export let camera = null;
 export const ctx = document.getElementById('canvas').getContext('2d');
 ctx.lineToIso = function(pos)  {
         const isoPos = pos.toIso();
@@ -22,7 +21,6 @@ ctx.moveToIso = function(pos) {
 function gameLoop() {
 
     ctx.clearRect(0 ,0, gameWidth, gameHeight);
-    camera = map.follow.coords;
     map.draw();
     train1.forEach( v => v.move());
     train1.forEach( v => v.draw());
@@ -44,7 +42,8 @@ function gameLoop() {
 let map = new Grid(ctx, 30);
 train1.push(new Car(map, 'firebrick') );
 
-map.follow = train1[0];
+export const camera = train1[0].frontAxle.centre;
+
 requestAnimationFrame(gameLoop);
 
 window.addEventListener('keydown', (e) => {

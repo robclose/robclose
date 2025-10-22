@@ -1,13 +1,13 @@
 "use strict";
 import { Pos } from './Pos.js';
 import { roadMap } from './roadmap.js';
-
+import { camera } from './towing.js';
+ 
 const gridSize = 30;
 
 export class Grid {
     constructor(ctx, terrainSize, tileSize = gridSize) {
         this.terrain = this.terrainGen(terrainSize, terrainSize, 30);
-        this.follow = null;
         this.tileSize = tileSize;
         this.ctx = ctx;
     }
@@ -69,10 +69,10 @@ export class Grid {
 
     draw() {
         // Calculate the range of the grid visible on screen
-        const gridStartX = (Math.floor(this.follow.coords.x / this.tileSize) - 660 / this.tileSize);
-        const gridEndX = (Math.floor(this.follow.coords.x / this.tileSize) + 660 / this.tileSize);
-        const gridStartY = (Math.floor(this.follow.coords.y / this.tileSize) - 660 / this.tileSize);
-        const gridEndY = (Math.floor(this.follow.coords.y / this.tileSize) + 660 / this.tileSize);
+        const gridStartX = (Math.floor(camera.x / this.tileSize) - 660 / this.tileSize);
+        const gridEndX = (Math.floor(camera.x / this.tileSize) + 660 / this.tileSize);
+        const gridStartY = (Math.floor(camera.y / this.tileSize) - 660 / this.tileSize);
+        const gridEndY = (Math.floor(camera.y / this.tileSize) + 660 / this.tileSize);
         let point = new Pos(0, 0, 0);
 
         for (let i = gridStartX; i <= gridEndX; i++) {
