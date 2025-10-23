@@ -1,5 +1,4 @@
 "use strict";
-import { camera } from "./towing.js";
 
 export class Pos {
     constructor(x, y, z = 0) {
@@ -30,7 +29,7 @@ export class Pos {
         return Math.atan2(this.z - pos.z,
             Math.hypot(this.x - pos.x, this.y - pos.y));
     }
-    toIso() {
+    toIso(camera) {
         const x = this.x - camera.x + 250;
         const y = this.y - camera.y + 250;
         const sx = (x - y);

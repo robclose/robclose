@@ -1,15 +1,13 @@
 "use strict";
-import { Pos } from './Pos.js';
+
 import { roadMap } from './roadmap.js';
-import { camera } from './towing.js';
  
 const gridSize = 30;
 
 export class Grid {
-    constructor(ctx, terrainSize, tileSize = gridSize) {
+    constructor(terrainSize, tileSize = gridSize) {
         this.terrain = this.terrainGen(terrainSize, terrainSize, 30);
         this.tileSize = tileSize;
-        this.ctx = ctx;
     }
 
     terrainGen(w, h, numHills) {
@@ -67,47 +65,5 @@ export class Grid {
         return !!roadMap[wrap(x)][wrap(y)];
     }
 
-    draw() {
-        // Calculate the range of the grid visible on screen
-        const gridStartX = (Math.floor(camera.x / this.tileSize) - 660 / this.tileSize);
-        const gridEndX = (Math.floor(camera.x / this.tileSize) + 660 / this.tileSize);
-        const gridStartY = (Math.floor(camera.y / this.tileSize) - 660 / this.tileSize);
-        const gridEndY = (Math.floor(camera.y / this.tileSize) + 660 / this.tileSize);
-        let point = new Pos(0, 0, 0);
-
-        for (let i = gridStartX; i <= gridEndX; i++) {
-            for (let j = gridStartY; j <= gridEndY; j++) {
-                let alpha;
-                let colour;
-                (i + j) % 2 == 0 ? alpha = '90%' : alpha = '100%';
-                const x0 = i * this.tileSize;
-                const x1 = (i + 1) * this.tileSize;
-                const y0 = j * this.tileSize;
-                const y1 = (j + 1) * this.tileSize;
-                let z = [this.getHeight(x0, y0),
-                this.getHeight(x1, y0),
-                this.getHeight(x1, y1),
-                this.getHeight(x0, y1)];
-                z = z.map(z0 => Math.max(z0, -40));
-
-                colour = `${Math.floor(120 - z[0] * 0.5)} 70% ${Math.floor(50 + z[0] * 0.15)}%`;
-                if (this.isRoad(i, j) && Math.max(...z) > -40) {
-                    colour = '80 30% 70%';
-                }
-                if (Math.max(...z) <= -40) {
-                    colour = '210 70% 40%';
-                }
-
-                this.ctx.fillStyle = `hsl(${colour} / ${alpha})`;
-                this.ctx.beginPath();
-                // Draw a filled quad for each grid square
-                this.ctx.moveToIso(point.move(x0, y0, z[0]));
-                this.ctx.lineToIso(point.move(x1, y0, z[1]));
-                this.ctx.lineToIso(point.move(x1, y1, z[2]));
-                this.ctx.lineToIso(point.move(x0, y1, z[3]));
-                this.ctx.closePath();
-                this.ctx.fill();
-            }
-        }
-    }
+   
 }
